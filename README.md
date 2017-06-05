@@ -36,6 +36,6 @@ if you are going to run the scripts interactively, remember to use `tf.reset_def
 
 Running a script takes around 150sec using an AWS p2xlarge instance (with a Tesla k80 GPU)
 
-
+NOTE: The author claims to obtain 95% accuracy on validation. When using the code [here](https://github.com/fchollet/keras/blob/master/examples/pretrained_word_embeddings.py) we never managed to obtain more than around 73%. This is consistent with the Tensorflow results. Nonetheless, I will emphaize that the aim of the code here is to illustrate the variety of tools within Tensorflow.  
  
  
