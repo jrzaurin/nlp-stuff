@@ -4,7 +4,7 @@ Part of the code in this repo is based on this great keras [tutorial](https://bl
 
 The aim here is simply to illustrate 3 different ways of building a Convolutional neural network for text classification using Tensorflow. 
 
-The approach is described in the post I mentioned above, and consist mainly in using word embeddings (the well known GloVe embeddings) with a series of 1D Convolutions. This is the architecture:
+The approach is described in the post I mentioned above, and consists mainly in using word embeddings (the well known GloVe embeddings) with a series of 1D Convolutions. This is the architecture:
 
 `[Emb layer + Emb Look-up] --> 3x[Conv1D + MaxPool1D + BN] --> [FC] --> [FC_output]`
 
