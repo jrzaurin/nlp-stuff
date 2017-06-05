@@ -28,6 +28,10 @@ I have used three different utilities within Tensorflow to build the architectur
 
 3-The high level API `tflearn`, which I guess should be the "go-to" tool. 
 
+You will need the 20newsgroup dataset and the GloVe vectors to run the scripts. You can get them from here: 
+* [20newsgroup](http://www.cs.cmu.edu/afs/cs.cmu.edu/project/theo-20/www/data/news20.html)
+* [Glove](https://nlp.stanford.edu/projects/glove/)
+
 if you are going to run the scripts interactively, remember to use `tf.reset_default_graph()` each time you re-define your graph. 
 
 Running a script takes around 150sec using an AWS p2xlarge instance (with a Tesla k80 GPU)
