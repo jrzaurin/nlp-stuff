@@ -2,7 +2,7 @@
 
 Part of the code in this repo is based on this great keras [tutorial](https://blog.keras.io/using-pre-trained-word-embeddings-in-a-keras-model.html) by F. Chollet, which I recommend reading. 
 
-The aim here is simply to illustrate 3 different ways of building a Convolutional neural network using Tensorflow, for text classification. 
+The aim here is simply to illustrate 3 different ways of building a Convolutional neural network for text classification using Tensorflow. 
 
 The approach is described in the post I mentioned above, and consist mainly in using word embeddings (the well known GloVe embeddings) with a series of 1D Convolutions. This is the architecture:
 
