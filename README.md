@@ -23,12 +23,15 @@ In addition, global max pooling is also used. This means that in the output of t
 I have used three different utilities within Tensorflow to build the architecture. From lower to higher level:
 
 1-“Pure” Tensorflow, using mainly `tf.nn`. To run: 
+
 `python pretrained_word_embedding_TF_nn.py`
 
 2- The `layer` module along with the `model_fn` library. To run:
+
 `python pretrained_word_embedding_TF_layer.py`
 
 3-The high level API `tflearn`, which I guess should be the "go-to" tool. 
+
 `python pretrained_word_embedding_TF_tflearn.py`
  
 You will need the 20newsgroup dataset and the GloVe vectors to run the scripts. You can get them from here: 
