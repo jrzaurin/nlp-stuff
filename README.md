@@ -1,8 +1,8 @@
 # Text-Classification-with-Tensorflow
 
-Part of the code in this repo is based on this great [keras tutorial](https://blog.keras.io/using-pre-trained-word-embeddings-in-a-keras-model.html) by F. Chollet, which I recommend reading. 
+Part of the code in this repo is based on this great [keras tutorial](https://blog.keras.io/using-pre-trained-word-embeddings-in-a-keras-model.html) by F. Chollet, which I recommend reading. The correspondin keras code can be found [here](https://github.com/fchollet/keras/blob/master/examples/pretrained_word_embeddings.py)
 
-The aim here is simply to illustrate 3 different ways of building a Convolutional neural network for text classification using Tensorflow. 
+My aim here is simply to illustrate 3 different ways of building a Convolutional neural network for text classification using Tensorflow. 
 
 The approach is described in the post I mentioned above, and consists mainly in using word embeddings (the well known GloVe embeddings) with a series of 1D Convolutions. This is the architecture:
 
