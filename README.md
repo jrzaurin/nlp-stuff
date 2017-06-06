@@ -1,6 +1,6 @@
 # Text-Classification-with-Tensorflow
 
-Part of the code in this repo is based on this great keras [tutorial](https://blog.keras.io/using-pre-trained-word-embeddings-in-a-keras-model.html) by F. Chollet, which I recommend reading. 
+Part of the code in this repo is based on this great [keras tutorial](https://blog.keras.io/using-pre-trained-word-embeddings-in-a-keras-model.html) by F. Chollet, which I recommend reading. 
 
 The aim here is simply to illustrate 3 different ways of building a Convolutional neural network for text classification using Tensorflow. 
 
