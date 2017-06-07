@@ -38,6 +38,9 @@ You will need the 20newsgroup dataset and the GloVe vectors to run the scripts. 
 * [20newsgroup](http://www.cs.cmu.edu/afs/cs.cmu.edu/project/theo-20/www/data/news20.html)
 * [Glove](https://nlp.stanford.edu/projects/glove/)
 
+The script `get_data.sh` will download them for you and put in the right place if you run it from
+ this directory `bash get_data.sh`.
+ 
 if you are going to run the scripts interactively, remember to use `tf.reset_default_graph()` each time you re-define your graph. 
 
 Running a script takes around 150sec using an AWS p2xlarge instance (with a Tesla k80 GPU)
