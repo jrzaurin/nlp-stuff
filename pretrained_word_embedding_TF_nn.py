@@ -140,7 +140,7 @@ if __name__ == '__main__':
             b_o = tf.Variable(tf.zeros([n_labels]), name="biases")
             l2_loss += tf.nn.l2_loss(W_o)
             l2_loss += tf.nn.l2_loss(b_o)
-            scores = tf.nn.relu(tf.matmul(fc_drop,W_o) + b_o)
+            scores = tf.nn.softmax(tf.matmul(fc_drop,W_o) + b_o)
 
         with tf.name_scope("train"):
             losses = tf.nn.softmax_cross_entropy_with_logits(logits=scores, labels=y)
