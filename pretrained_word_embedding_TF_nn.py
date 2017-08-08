@@ -140,28 +140,29 @@ if __name__ == '__main__':
             b_o = tf.Variable(tf.zeros([n_labels]), name="biases")
             l2_loss += tf.nn.l2_loss(W_o)
             l2_loss += tf.nn.l2_loss(b_o)
-            scores = tf.nn.softmax(tf.matmul(fc_drop,W_o) + b_o)
+            logits = tf.matmul(fc_drop,W_o) + b_o
 
         with tf.name_scope("train"):
-            losses = tf.nn.softmax_cross_entropy_with_logits(logits=scores, labels=y)
+            losses = tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=y)
             loss = tf.reduce_mean(losses) + 0.001 * l2_loss
             optimizer = tf.train.AdamOptimizer(learning_rate=0.001)
             training_op = optimizer.minimize(loss)
 
             # Note: if you prefer to one_hot encode here:
             # onehot_labels = tf.one_hot(indices=tf.cast(y, tf.int32), depth=20)
-            # loss = tf.losses.softmax_cross_entropy(onehot_labels=onehot_labels, logits=scores)
+            # loss = tf.losses.softmax_cross_entropy(onehot_labels=onehot_labels, logits=logits)
             # optimizer = tf.train.AdamOptimizer()
             # training_op = optimizer.minimize(loss)
 
         with tf.name_scope("eval"):
+            scores = tf.nn.softmax(logits)
             predictions = tf.argmax(scores, 1, name="predictions")
             correct_predictions = tf.equal(predictions, tf.argmax(y, 1))
             accuracy = tf.reduce_mean(tf.cast(correct_predictions, "float"), name="accuracy")
 
             # Note: if you prefer to one_hot encode in "train":
-            # probabilities = tf.nn.softmax(scores, name="probabilities")
-            # classes = tf.argmax(input=scores, axis=1)
+            # probabilities = tf.nn.softmax(logits, name="probabilities")
+            # classes = tf.argmax(input=probabilities, axis=1)
             # accuracy = tf.contrib.metrics.accuracy(y,classes)
 
         with tf.name_scope("init_and_save"):
