@@ -1,8 +1,8 @@
 # Text-Classification-with-Tensorflow
 
-Part of the code in this repo is based on this great keras [tutorial](https://blog.keras.io/using-pre-trained-word-embeddings-in-a-keras-model.html) by F. Chollet, which I recommend reading. 
+Part of the code in this repo is based on this great [keras tutorial](https://blog.keras.io/using-pre-trained-word-embeddings-in-a-keras-model.html) by F. Chollet, which I recommend reading. The correspondin keras code can be found [here](https://github.com/fchollet/keras/blob/master/examples/pretrained_word_embeddings.py).
 
-The aim here is simply to illustrate 3 different ways of building a Convolutional neural network for text classification using Tensorflow. 
+My aim here is simply to illustrate 3 different ways of building a Convolutional neural network for text classification using Tensorflow. 
 
 The approach is described in the post I mentioned above, and consists mainly in using word embeddings (the well known GloVe embeddings) with a series of 1D Convolutions. This is the architecture:
 
@@ -22,16 +22,25 @@ In addition, global max pooling is also used. This means that in the output of t
 
 I have used three different utilities within Tensorflow to build the architecture. From lower to higher level:
 
-1-“Pure” Tensorflow, using mainly `tf.nn` 
+1-“Pure” Tensorflow, using mainly `tf.nn`. To run: 
 
-2- The `layer` module along with the `model_fn` library.
+`python pretrained_word_embedding_TF_nn.py`
 
-3-The high level API `tflearn`, which I guess should be the "go-to" tool. 
+2- The `layer` module along with the `model_fn` library. To run:
 
+`python pretrained_word_embedding_TF_layer.py`
+
+3-The high level API `tflearn`, which I guess should be the "go-to" tool. To run:
+
+`python pretrained_word_embedding_TF_tflearn.py`
+ 
 You will need the 20newsgroup dataset and the GloVe vectors to run the scripts. You can get them from here: 
 * [20newsgroup](http://www.cs.cmu.edu/afs/cs.cmu.edu/project/theo-20/www/data/news20.html)
 * [Glove](https://nlp.stanford.edu/projects/glove/)
 
+The script `get_data.sh` will download them for you and put in the right place if you run it from
+ this directory `bash get_data.sh`.
+ 
 if you are going to run the scripts interactively, remember to use `tf.reset_default_graph()` each time you re-define your graph. 
 
 Running a script takes around 150sec using an AWS p2xlarge instance (with a Tesla k80 GPU)
