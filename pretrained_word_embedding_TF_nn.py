@@ -7,7 +7,7 @@ from data_utils import get_batch
 
 
 def conv1d_layer(inp, filter_shape):
-    """This is a 1d conv, so filter_shape = [dim, input_dim, out_dim]"""
+    """This is a 1d conv, so filter_shape = [dim, input_channels, out_channels]"""
     W = tf.Variable(tf.truncated_normal(filter_shape, stddev=0.01))
     b = tf.Variable(tf.random_normal(shape=[filter_shape[2]]))
     # or you could initialize it as constant
@@ -78,7 +78,7 @@ if __name__ == '__main__':
     batch_size=128
     graph = tf.Graph()
     with graph.as_default():
-        l2_loss = tf.constant(0.0)
+        l2_reg = tf.constant(0.0)
 
         # we'll use scopes so they will be saved nicely in corresponding "directories"
         with tf.name_scope("inputs"):
@@ -138,19 +138,18 @@ if __name__ == '__main__':
             # Here explicitly define the output layer with l2 reg
             W_o = tf.Variable(tf.truncated_normal((128,20), stddev=0.1), name="weights")
             b_o = tf.Variable(tf.zeros([n_labels]), name="biases")
-            l2_loss += tf.nn.l2_loss(W_o)
-            l2_loss += tf.nn.l2_loss(b_o)
-            logits = tf.matmul(fc_drop,W_o) + b_o
+            l2_reg += tf.nn.l2_loss(W_o)
+            logits  = tf.matmul(fc_drop,W_o) + b_o
 
         with tf.name_scope("train"):
             losses = tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=y)
-            loss = tf.reduce_mean(losses) + 0.001 * l2_loss
+            loss = tf.reduce_mean(losses) + (0.001 * l2_reg)
             optimizer = tf.train.AdamOptimizer(learning_rate=0.001)
             training_op = optimizer.minimize(loss)
 
             # Note: if you prefer to one_hot encode here:
             # onehot_labels = tf.one_hot(indices=tf.cast(y, tf.int32), depth=20)
-            # loss = tf.losses.softmax_cross_entropy(onehot_labels=onehot_labels, logits=logits)
+            # loss = tf.nn.softmax_cross_entropy(onehot_labels=onehot_labels, logits=logits)
             # optimizer = tf.train.AdamOptimizer()
             # training_op = optimizer.minimize(loss)
 
