@@ -19,8 +19,8 @@ if __name__ == '__main__':
 
 
     start = time()
-    GLOVE_DIR = 'glove.6B/'
-    TEXT_DATA_DIR = '20_newsgroup/'
+    GLOVE_DIR = 'data/glove.6B/'
+    TEXT_DATA_DIR = 'data/20_newsgroup/'
     MAX_SEQUENCE_LENGTH = 1000
     MAX_NB_WORDS = 20000
     EMBEDDING_DIM = 100

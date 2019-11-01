@@ -11,7 +11,7 @@ import tensorflow as tf
 from tensorflow.contrib import learn
 from tensorflow.contrib.learn.python.learn.estimators import model_fn as model_fn_lib
 
-tf.logging.set_verbosity(tf.logging.INFO)
+tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.INFO)
 
 
 def cnn_model_fn(features, labels, mode):
@@ -89,8 +89,8 @@ def cnn_model_fn(features, labels, mode):
 
 if __name__ == '__main__':
 
-    GLOVE_DIR = 'glove.6B/'
-    TEXT_DATA_DIR = '20_newsgroup/'
+    GLOVE_DIR = 'data/glove.6B/'
+    TEXT_DATA_DIR = 'data/20_newsgroup/'
     MAX_SEQUENCE_LENGTH = 1000
     MAX_NB_WORDS = 20000
     EMBEDDING_DIM = 100

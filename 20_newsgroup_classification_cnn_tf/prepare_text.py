@@ -10,6 +10,8 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.model_selection import train_test_split
 from data_utils import pad_sequences, one_hot
 
+import pdb
+
 
 def clean_text( doc, remove_stopwords=False):
     # remove HTML
@@ -89,7 +91,7 @@ def prepare_data(GLOVE_DIR,TEXT_DATA_DIR,MAX_SEQUENCE_LENGTH,MAX_NB_WORDS
     # the dictionary obtained using keras.
     words  = vectorizer.get_feature_names()
     counts = vectorizer_fit.toarray().sum(axis=0)
-    counts_words = zip(counts,words)
+    counts_words = list(zip(counts,words))
     counts_words.sort(reverse=True)
 
     vocabulary = [str(w[1]) for w in counts_words]
