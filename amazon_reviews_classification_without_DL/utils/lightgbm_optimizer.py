@@ -122,11 +122,15 @@ class LGBOptimizer(object):
 			params['num_class'] = self.num_class
 
 			if self.with_focal_loss:
-				focal_loss = lambda x,y: focal_loss_lgb(x, y, params['alpha'], params['gamma'],
+				# to avoid annoying warning "[Warning] Unknown parameter: gamma"
+				alpha, gamma = params['alpha'], params['gamma']
+				del params['alpha'] ; del params['gamma']
+
+				focal_loss = lambda x,y: focal_loss_lgb(x, y, alpha, gamma, self.num_class)
+				focal_loss_eval = lambda x,y: focal_loss_lgb_eval_error(x, y, alpha, gamma,
 					self.num_class)
-				focal_loss_eval = lambda x,y: focal_loss_lgb_eval_error(x, y, params['alpha'],
-					params['gamma'], self.num_class)
 				lgb_fl_f1 = lambda x,y: lgb_focal_f1_score(x,y, self.num_class)
+
 				model = lgb.train(
 					params,
 					dtrain,
@@ -141,7 +145,7 @@ class LGBOptimizer(object):
 					score = f1_score(deval.label, preds, average='weighted')
 				else:
 					preds = model.predict(deval.data).ravel('F')
-					score = focal_loss_eval(preds, deval)
+					score = focal_loss_eval(preds, deval)[1]
 			else:
 				if self.is_unbalance: params['is_unbalance'] = True
 				lgb_f1 = lambda x,y: lgb_f1_score(x,y, self.num_class)
@@ -184,11 +188,15 @@ class LGBOptimizer(object):
 			params['num_class'] = self.num_class
 
 			if self.with_focal_loss:
-				focal_loss = lambda x,y: focal_loss_lgb(x, y, params['alpha'], params['gamma'],
+				# to avoid annoying warning "[Warning] Unknown parameter: gamma"
+				alpha, gamma = params['alpha'], params['gamma']
+				del params['alpha'] ; del params['gamma']
+
+				focal_loss = lambda x,y: focal_loss_lgb(x, y, alpha, gamma, self.num_class)
+				focal_loss_eval = lambda x,y: focal_loss_lgb_eval_error(x, y, alpha, gamma,
 					self.num_class)
-				focal_loss_eval = lambda x,y: focal_loss_lgb_eval_error(x, y, params['alpha'],
-					params['gamma'], self.num_class)
 				lgb_fl_f1 = lambda x,y: lgb_focal_f1_score(x,y, self.num_class)
+
 				cv_result = lgb.cv(
 					params,
 					dtrain,

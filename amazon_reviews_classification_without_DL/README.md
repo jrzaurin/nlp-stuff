@@ -12,4 +12,7 @@ The order of the `.py` scripts is:
 
 Easy.
 
-There are explanatory notebooks in the `notebooks` dir
+Note that is not the goal of this repo to go into the details of each technique (in case you are interested in a deep dive into LDA have a look [here](https://github.com/jrzaurin/Topic_Modelling_and_Self_Organizing_Maps)). Therefore, I have not used [pyldavis](https://github.com/bmabey/pyLDAvis) to understand the content of the topics, or compare perplexity (and/or coherence) between the LDA and EnsembleTopics (within `EnsTop`). Simply, I just aimed to compare different "standard" techniques used to classify text.
+
+There are explanatory notebooks in the `notebooks` dir.
+
