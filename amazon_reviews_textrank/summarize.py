@@ -44,8 +44,8 @@ class Summarizer(object):
 		sentidx  = [self.sent2idx[s] for s in proc_sents]
 		idxmap = {k:v for k,v in enumerate(sentidx)}
 
-        # sample n random sentences to build a graph since 1.4 mil don't fit
-        # in memory.
+		# sample n random sentences to build a graph since 1.4 mil don't fit
+		# in memory.
 		rand_idx = random.sample(range(1, len(self.sent2idx)), n)
 		rand_idx = [r for r in rand_idx if r not in sentidx]
 		graph_idx = sentidx + rand_idx
