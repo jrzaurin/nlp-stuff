@@ -4,6 +4,7 @@ import pickle
 import os
 
 from pathlib import Path
+from functools import partial
 from datetime import datetime
 from tqdm import tqdm, trange
 from sklearn.metrics import accuracy_score, f1_score, precision_score
@@ -17,14 +18,27 @@ from utils.parser import parse_args
 
 import pdb
 
+
 n_cpus = os.cpu_count()
+ctx = mx.gpu() if mx.context.num_gpus() else mx.cpu()
 
 
-def train_step(model, train_loader, trainer, metric, epoch):
+def softmax(x):
+    exp_x = np.exp(x - np.max(x))
+    return exp_x / (np.sum(exp_x, axis=1, keepdims=True) + 1e-6)
+
+
+def zero_padding(model, padding_idx, shape):
+    model.wordattnnet.word_embed.weight.data()[padding_idx] = mx.ndarray.zeros(
+        shape=shape, ctx=ctx
+    )
+
+
+def train_step(model, train_loader, trainer, metric, epoch, zero_padding):
 
     metric.reset()
     train_steps = len(train_loader)
-    running_loss = 0
+    running_loss = 0.0
     with trange(train_steps) as t:
         for batch_idx, (data, target) in zip(t, train_loader):
             t.set_description("epoch %i" % (epoch + 1))
@@ -36,6 +50,8 @@ def train_step(model, train_loader, trainer, metric, epoch):
                 y_pred = model(X)
                 loss = criterion(y_pred, y)
                 loss.backward()
+            if zero_padding:
+                p_zero_padding(model)
 
             trainer.step(X.shape[0])
             running_loss += nd.mean(loss).asscalar()
@@ -44,18 +60,21 @@ def train_step(model, train_loader, trainer, metric, epoch):
             t.set_postfix(acc=metric.get()[1], loss=avg_loss)
 
 
-def eval_step(model, eval_loader, metric, is_valid=True):
+def eval_step(model, eval_loader, metric, is_test=False):
 
     metric.reset()
     eval_steps = len(eval_loader)
-    running_loss = 0
-    preds = []
+    running_loss = 0.0
+    if is_test:
+        preds = []
+    else:
+        preds = None
     with trange(eval_steps) as t:
         for batch_idx, (data, target) in zip(t, eval_loader):
-            if is_valid:
-                t.set_description("valid")
-            else:
+            if is_test:
                 t.set_description("test")
+            else:
+                t.set_description("valid")
 
             X = data.as_in_context(ctx)
             y = target.as_in_context(ctx)
@@ -67,7 +86,8 @@ def eval_step(model, eval_loader, metric, is_valid=True):
             running_loss += nd.mean(loss).asscalar()
             avg_loss = running_loss / (batch_idx + 1)
             metric.update(preds=nd.argmax(y_pred, axis=1), labels=y)
-            preds.append(y_pred)
+            if is_test:
+                preds.append(y_pred.asnumpy())
             t.set_postfix(acc=metric.get()[1], loss=avg_loss)
 
     return avg_loss, preds
@@ -110,7 +130,7 @@ if __name__ == "__main__":
         tokf = "HANPreprocessor.p"
         model_name = (
             args.model
-            + "_mx_"
+            + "_mx"
             + "_lr_"
             + str(args.lr)
             + "_wdc_"
@@ -133,7 +153,7 @@ if __name__ == "__main__":
         tokf = "TextPreprocessor.p"
         model_name = (
             args.model
-            + "_mx_"
+            + "_mx"
             + "_lr_"
             + str(args.lr)
             + "_wdc_"
@@ -206,21 +226,36 @@ if __name__ == "__main__":
             with_attention=args.with_attention,
         )
 
-    ctx = mx.gpu() if mx.test_utils.list_gpus() else mx.cpu()
     model.initialize(ctx=ctx)
     model.hybridize()
+    if args.lr_scheduler.lower() == "multifactorscheduler":
+        steps_epochs = [2, 4, 6]
+        iterations_per_epoch = np.ceil(len(train_loader))
+        steps_iterations = [s * iterations_per_epoch for s in steps_epochs]
+        schedule = mx.lr_scheduler.MultiFactorScheduler(
+            step=steps_iterations, factor=0.4
+        )
+    else:
+        schedule = None
+    adam_optimizer = mx.optimizer.Adam(
+        learning_rate=args.lr, wd=args.weight_decay, lr_scheduler=schedule
+    )
     criterion = gluon.loss.SoftmaxCELoss()
     metric = Accuracy()
-    trainer = gluon.Trainer(
-        model.collect_params(),
-        "Adam",
-        {"learning_rate": args.lr, "wd": args.weight_decay},
+    trainer = gluon.Trainer(model.collect_params(), optimizer=adam_optimizer)
+
+    p_zero_padding = partial(
+        zero_padding, padding_idx=args.padding_idx, shape=args.embed_dim
     )
+    if args.zero_padding:
+        p_zero_padding(model)
 
     stop_step = 0
     best_loss = 1e6
     for epoch in range(args.n_epochs):
-        train_step(model, train_loader, trainer, metric, epoch)
+        train_step(
+            model, train_loader, trainer, metric, epoch, zero_padding=args.zero_padding
+        )
         if epoch % args.eval_every == (args.eval_every - 1):
             val_loss, _ = eval_step(model, eval_loader, metric)
             best_loss, stop_step, stop = early_stopping(
@@ -236,10 +271,8 @@ if __name__ == "__main__":
 
         metric.reset()
         model.load_parameters(str(model_weights / (model_name + ".params")), ctx=ctx)
-        test_loss, preds = eval_step(model, test_loader, metric, is_valid=False)
-        pdb.set_trace()
-        preds = nd.concat(*preds, dim=0)
-        preds = nd.argmax(nd.softmax(preds), axis=1).asnumpy()
+        test_loss, preds = eval_step(model, test_loader, metric, is_test=True)
+        preds = np.argmax(softmax(np.vstack(preds)), axis=1)
         test_acc = accuracy_score(test_mtx["y_test"], preds)
         test_f1 = f1_score(test_mtx["y_test"], preds, average="weighted")
         test_prec = precision_score(test_mtx["y_test"], preds, average="weighted")

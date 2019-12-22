@@ -22,10 +22,15 @@ def parse_args():
         help="padding index for the numericalised token sequences.",
     )
     parser.add_argument(
+        "--zero_padding",
+        action="store_true",
+        help="Manually zero padding idx when using mxnet.",
+    )
+    parser.add_argument(
         "--embed_dim", type=int, default=50, help="input embeddings dimension."
     )
     parser.add_argument(
-        "--embed_dropout", type=float, default=0., help="embeddings dropout."
+        "--embed_dropout", type=float, default=0.0, help="embeddings dropout."
     )
     parser.add_argument(
         "--embedding_matrix",
@@ -76,7 +81,7 @@ def parse_args():
         "--lr_scheduler",
         type=str,
         default="No",
-        help="Specify the lr_scheduler {reducelronplateau, cycliclr, No (nothing)}",
+        help="Specify the lr_scheduler {multifactorscheduler, reducelronplateau, cycliclr, No (nothing)}",
     )
     parser.add_argument(
         "--n_cycles", type=int, default=1, help="number of cycles when using cycliclr"
