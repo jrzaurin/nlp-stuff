@@ -8,6 +8,9 @@ from mxnet.gluon import nn, rnn, HybridBlock
 from gluonnlp.model.utils import apply_weight_drop
 
 
+ctx = mx.gpu() if mx.context.num_gpus() else mx.cpu()
+
+
 class HierAttnNet(HybridBlock):
     def __init__(self,
         vocab_size,
@@ -48,7 +51,7 @@ class HierAttnNet(HybridBlock):
 
     def forward(self, X):
         x = X.transpose(axes=(1,0,2))
-        word_h_n = nd.zeros(shape=(2, X.shape[0], self.word_hidden_dim))
+        word_h_n = nd.zeros(shape=(2, X.shape[0], self.word_hidden_dim), ctx=ctx)
         sent_list = []
         for sent in x:
             out, word_h_n = self.wordattnnet(sent, word_h_n)
