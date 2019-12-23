@@ -5,8 +5,7 @@ import os
 
 from pathlib import Path
 from functools import partial
-from datetime import datetime
-from tqdm import tqdm, trange
+from tqdm import trange
 from sklearn.metrics import accuracy_score, f1_score, precision_score
 
 import mxnet as mx
@@ -15,8 +14,6 @@ from mxnet.metric import Accuracy
 
 from models.mxnet_models import HierAttnNet, RNNAttn
 from utils.parser import parse_args
-
-import pdb
 
 
 n_cpus = os.cpu_count()
@@ -29,9 +26,7 @@ def softmax(x):
 
 
 def zero_padding(model, padding_idx, shape):
-    model.wordattnnet.word_embed.weight.data()[padding_idx] = mx.ndarray.zeros(
-        shape=shape, ctx=ctx
-    )
+    model.wordattnnet.word_embed.weight.data()[padding_idx] = mx.ndarray.zeros(shape=shape, ctx=ctx)
 
 
 def train_step(model, train_loader, trainer, metric, epoch, zero_padding):
@@ -79,9 +74,8 @@ def eval_step(model, eval_loader, metric, is_test=False):
             X = data.as_in_context(ctx)
             y = target.as_in_context(ctx)
 
-            with autograd.record(train_mode=False):
-                y_pred = model(X)
-                loss = criterion(y_pred, y)
+            y_pred = model(X)
+            loss = criterion(y_pred, y)
 
             running_loss += nd.mean(loss).asscalar()
             avg_loss = running_loss / (batch_idx + 1)
@@ -99,9 +93,7 @@ def early_stopping(curr_value, best_value, stop_step, patience):
     else:
         stop_step += 1
     if stop_step >= patience:
-        print(
-            "Early stopping triggered. patience: {} log:{}".format(patience, curr_value)
-        )
+        print("Early stopping triggered. patience: {} log:{}".format(patience, curr_value))
         stop = True
     else:
         stop = False
@@ -143,8 +135,6 @@ if __name__ == "__main__":
             + str(args.sent_hidden_dim)
             + "_emb_"
             + str(args.embed_dim)
-            + "_ini_"
-            + args.init_method
             + "_pre_"
             + ("no" if args.embedding_matrix is None else "yes")
         )
@@ -176,7 +166,7 @@ if __name__ == "__main__":
 
     train_mtx = np.load(train_dir / ftrain)
     train_set = gluon.data.dataset.ArrayDataset(
-        train_mtx["X_train"], train_mtx["y_train"]
+        train_mtx["X_train"][:1000], train_mtx["y_train"][:1000]
     )
     train_loader = gluon.data.DataLoader(
         dataset=train_set, batch_size=args.batch_size, num_workers=n_cpus
@@ -184,14 +174,14 @@ if __name__ == "__main__":
 
     valid_mtx = np.load(valid_dir / fvalid)
     eval_set = gluon.data.dataset.ArrayDataset(
-        valid_mtx["X_valid"], valid_mtx["y_valid"]
+        valid_mtx["X_valid"][:1000], valid_mtx["y_valid"][:1000]
     )
     eval_loader = gluon.data.DataLoader(
         dataset=eval_set, batch_size=args.batch_size, num_workers=n_cpus
     )
 
     test_mtx = np.load(test_dir / ftest)
-    test_set = gluon.data.dataset.ArrayDataset(test_mtx["X_test"], test_mtx["y_test"])
+    test_set = gluon.data.dataset.ArrayDataset(test_mtx["X_test"][:1000], test_mtx["y_test"][:1000])
     test_loader = gluon.data.DataLoader(
         dataset=test_set, batch_size=args.batch_size, num_workers=n_cpus
     )
@@ -204,12 +194,13 @@ if __name__ == "__main__":
             maxlen_doc=tok.maxlen_doc,
             word_hidden_dim=args.word_hidden_dim,
             sent_hidden_dim=args.sent_hidden_dim,
-            padding_idx=args.padding_idx,
             embed_dim=args.embed_dim,
-            embed_dropout=args.embed_dropout,
+            weight_drop=args.weight_drop,
+            embed_drop=args.embed_drop,
+            locked_drop=args.locked_drop,
             embedding_matrix=args.embedding_matrix,
+            last_drop=args.last_drop,
             num_class=args.num_class,
-            init_method=args.init_method,
         )
     elif args.model == "rnn":
         model = RNNAttn(
@@ -218,23 +209,22 @@ if __name__ == "__main__":
             num_layers=args.num_layers,
             hidden_dim=args.hidden_dim,
             rnn_dropout=args.rnn_dropout,
-            padding_idx=args.padding_idx,
             embed_dim=args.embed_dim,
-            embed_dropout=args.embed_dropout,
+            embed_drop=args.embed_drop,
+            locked_drop=args.locked_drop,
+            last_drop=args.last_drop,
             embedding_matrix=args.embedding_matrix,
             num_class=args.num_class,
             with_attention=args.with_attention,
         )
 
     model.initialize(ctx=ctx)
-    model.hybridize()
+    # model.hybridize()
     if args.lr_scheduler.lower() == "multifactorscheduler":
         steps_epochs = [2, 4, 6]
         iterations_per_epoch = np.ceil(len(train_loader))
         steps_iterations = [s * iterations_per_epoch for s in steps_epochs]
-        schedule = mx.lr_scheduler.MultiFactorScheduler(
-            step=steps_iterations, factor=0.4
-        )
+        schedule = mx.lr_scheduler.MultiFactorScheduler(step=steps_iterations, factor=0.4)
     else:
         schedule = None
     adam_optimizer = mx.optimizer.Adam(
@@ -244,24 +234,20 @@ if __name__ == "__main__":
     metric = Accuracy()
     trainer = gluon.Trainer(model.collect_params(), optimizer=adam_optimizer)
 
-    p_zero_padding = partial(
-        zero_padding, padding_idx=args.padding_idx, shape=args.embed_dim
-    )
+    p_zero_padding = partial(zero_padding, padding_idx=args.padding_idx, shape=args.embed_dim)
     if args.zero_padding:
         p_zero_padding(model)
 
     stop_step = 0
     best_loss = 1e6
     for epoch in range(args.n_epochs):
-        train_step(
-            model, train_loader, trainer, metric, epoch, zero_padding=args.zero_padding
-        )
+        train_step(model, train_loader, trainer, metric, epoch, zero_padding=args.zero_padding)
         if epoch % args.eval_every == (args.eval_every - 1):
             val_loss, _ = eval_step(model, eval_loader, metric)
             best_loss, stop_step, stop = early_stopping(
                 val_loss, best_loss, stop_step, args.patience
             )
-        if stop == True:
+        if stop:
             break
         if (stop_step == 0) & (args.save_results):
             best_epoch = epoch

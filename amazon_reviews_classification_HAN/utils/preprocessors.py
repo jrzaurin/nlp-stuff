@@ -1,11 +1,7 @@
-import pandas as pd
 import numpy as np
 import spacy
 import os
 
-from tqdm import tqdm
-from pathlib import Path
-from multiprocessing import Pool
 from gensim.utils import tokenize
 from fastai.text import Tokenizer, Vocab
 from sklearn.exceptions import NotFittedError
@@ -15,9 +11,7 @@ n_cpus = os.cpu_count()
 
 
 def test_idx_groups(nested_list, flat_list, idx_seq):
-    res_nested_list = [
-        flat_list[idx_seq[i] : idx_seq[i + 1]] for i in range(len(idx_seq[:-1]))
-    ]
+    res_nested_list = [flat_list[idx_seq[i] : idx_seq[i + 1]] for i in range(len(idx_seq[:-1]))]
     rand_ids = np.random.choice(len(idx_seq), 100)
     res = [res_nested_list[i] == nested_list[i] for i in rand_ids]
     return all(res)
@@ -54,7 +48,7 @@ def pad_sequences(seq, maxlen, pad_first=True, pad_idx=1):
 
 def pad_nested_sequences(
     seq, maxlen_sent, maxlen_doc, pad_sent_first=True, pad_doc_first=False, pad_idx=1
-    ):
+):
     seq = [s for s in seq if len(s) >= 1]
     if len(seq) == 0:
         return np.array([[pad_idx] * maxlen_sent] * maxlen_doc).astype("int32")
@@ -75,10 +69,10 @@ class BasePreprocessor(object):
         super(BasePreprocessor, self).__init__()
 
     def tokenize(self, texts):
-        raise NotImplemented
+        raise NotImplementedError
 
     def transform(self, texts):
-        raise NotImplemented
+        raise NotImplementedError
 
 
 class HANPreprocessor(BasePreprocessor):
@@ -133,7 +127,7 @@ class HANPreprocessor(BasePreprocessor):
             self.vocab
             if self.verbose:
                 print("Using existing vocabulary")
-        except:
+        except AttributeError:
             if self.verbose:
                 print("Building Vocab...")
             self.vocab = Vocab.create(
@@ -143,8 +137,7 @@ class HANPreprocessor(BasePreprocessor):
         sents_numz = [self.vocab.numericalize(s) for s in sents_tokens]
         # group the sentences again into documents
         texts_numz = [
-            sents_numz[range_idx[i] : range_idx[i + 1]]
-            for i in range(len(range_idx[:-1]))
+            sents_numz[range_idx[i] : range_idx[i + 1]] for i in range(len(range_idx[:-1]))
         ]
         # compute max lengths for padding purposes
         sorted_sent_length = sorted(sents_length)
@@ -169,7 +162,7 @@ class HANPreprocessor(BasePreprocessor):
     def transform(self, texts):
         try:
             self.vocab
-        except:
+        except AttributeError:
             raise NotFittedError(
                 "This HANTokenizer instance is not trained yet. "
                 "Call 'tokenize' with appropriate arguments before using this estimator."
@@ -194,12 +187,10 @@ class TextPreprocessor(BasePreprocessor):
             self.vocab
             if self.verbose:
                 print("Using existing vocabulary")
-        except:
+        except AttributeError:
             if self.verbose:
                 print("Building Vocab...")
-            self.vocab = Vocab.create(
-                tokens, max_vocab=self.max_vocab, min_freq=self.min_freq
-            )
+            self.vocab = Vocab.create(tokens, max_vocab=self.max_vocab, min_freq=self.min_freq)
         texts_numz = [self.vocab.numericalize(t) for t in texts]
         sorted_texts_length = sorted(texts_length)
         self.maxlen = sorted_texts_length[int(self.q * len(sorted_texts_length))]
@@ -211,7 +202,7 @@ class TextPreprocessor(BasePreprocessor):
     def transform(self, texts):
         try:
             self.vocab
-        except:
+        except AttributeError:
             raise NotFittedError(
                 "This HANTokenizer instance is not trained yet. "
                 "Call 'tokenize' with appropriate arguments before using this estimator."

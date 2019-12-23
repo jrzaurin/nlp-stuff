@@ -6,8 +6,7 @@ import os
 import torch.nn.functional as F
 
 from pathlib import Path
-from datetime import datetime
-from tqdm import tqdm, trange
+from tqdm import trange
 from sklearn.metrics import accuracy_score, f1_score, precision_score
 from torch.optim.lr_scheduler import CyclicLR, ReduceLROnPlateau
 from torch.utils.data import TensorDataset, DataLoader
@@ -16,7 +15,6 @@ from models.pytorch_models import HierAttnNet, RNNAttn
 from utils.metrics import CategoricalAccuracy
 from utils.parser import parse_args
 
-import pdb
 
 n_cpus = os.cpu_count()
 use_cuda = torch.cuda.is_available()
@@ -84,9 +82,7 @@ def early_stopping(curr_value, best_value, stop_step, patience):
     else:
         stop_step += 1
     if stop_step >= patience:
-        print(
-            "Early stopping triggered. patience: {} log:{}".format(patience, curr_value)
-        )
+        print("Early stopping triggered. patience: {} log:{}".format(patience, curr_value))
         stop = True
     else:
         stop = False
@@ -127,8 +123,6 @@ if __name__ == "__main__":
             + str(args.sent_hidden_dim)
             + "_emb_"
             + str(args.embed_dim)
-            + "_ini_"
-            + args.init_method
             + "_pre_"
             + ("no" if args.embedding_matrix is None else "yes")
         )
@@ -159,15 +153,13 @@ if __name__ == "__main__":
 
     train_mtx = np.load(train_dir / ftrain)
     train_set = TensorDataset(
-        torch.Tensor(train_mtx["X_train"]), torch.Tensor(train_mtx["y_train"]).long()
+        torch.Tensor(train_mtx["X_train"][:1000]), torch.Tensor(train_mtx["y_train"][:1000]).long()
     )
-    train_loader = DataLoader(
-        dataset=train_set, batch_size=args.batch_size, num_workers=n_cpus
-    )
+    train_loader = DataLoader(dataset=train_set, batch_size=args.batch_size, num_workers=n_cpus)
 
     valid_mtx = np.load(valid_dir / fvalid)
     eval_set = TensorDataset(
-        torch.Tensor(valid_mtx["X_valid"]), torch.Tensor(valid_mtx["y_valid"]).long()
+        torch.Tensor(valid_mtx["X_valid"][:1000]), torch.Tensor(valid_mtx["y_valid"][:1000]).long()
     )
     eval_loader = DataLoader(
         dataset=eval_set, batch_size=args.batch_size, num_workers=n_cpus, shuffle=False
@@ -175,7 +167,7 @@ if __name__ == "__main__":
 
     test_mtx = np.load(test_dir / ftest)
     test_set = TensorDataset(
-        torch.Tensor(test_mtx["X_test"]), torch.Tensor(test_mtx["y_test"]).long()
+        torch.Tensor(test_mtx["X_test"][:1000]), torch.Tensor(test_mtx["y_test"][:1000]).long()
     )
     test_loader = DataLoader(
         dataset=test_set, batch_size=args.batch_size, num_workers=n_cpus, shuffle=False
@@ -191,10 +183,12 @@ if __name__ == "__main__":
             sent_hidden_dim=args.sent_hidden_dim,
             padding_idx=args.padding_idx,
             embed_dim=args.embed_dim,
-            embed_dropout=args.embed_dropout,
+            weight_drop=args.weight_drop,
+            embed_drop=args.embed_drop,
+            locked_drop=args.locked_drop,
+            last_drop=args.last_drop,
             embedding_matrix=args.embedding_matrix,
             num_class=args.num_class,
-            init_method=args.init_method,
         )
     elif args.model == "rnn":
         model = RNNAttn(
@@ -205,18 +199,17 @@ if __name__ == "__main__":
             rnn_dropout=args.rnn_dropout,
             padding_idx=args.padding_idx,
             embed_dim=args.embed_dim,
-            embed_dropout=args.embed_dropout,
+            embed_drop=args.embed_drop,
+            locked_drop=args.locked_drop,
+            last_drop=args.last_drop,
             embedding_matrix=args.embedding_matrix,
             num_class=args.num_class,
             with_attention=args.with_attention,
         )
-
     if use_cuda:
         model = model.cuda()
 
-    optimizer = torch.optim.AdamW(
-        model.parameters(), lr=args.lr, weight_decay=args.weight_decay
-    )
+    optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
 
     training_steps = len(train_loader)
     step_size = training_steps * (args.n_epochs // (args.n_cycles * 2))
@@ -248,7 +241,7 @@ if __name__ == "__main__":
             )
             if isinstance(scheduler, ReduceLROnPlateau):
                 scheduler.step(val_loss)
-        if stop == True:
+        if stop:
             break
         if (stop_step == 0) & (args.save_results):
             best_epoch = epoch
@@ -259,8 +252,8 @@ if __name__ == "__main__":
         model.load_state_dict(torch.load(model_weights / (model_name + ".pt")))
         test_loss, preds = eval_step(model, test_loader, metric, is_valid=False)
         preds = (F.softmax(torch.cat(preds), 1).topk(1, 1)[1]).cpu().numpy().squeeze(1)
-        test_acc  = accuracy_score(test_mtx["y_test"], preds)
-        test_f1   = f1_score(test_mtx["y_test"], preds, average="weighted")
+        test_acc = accuracy_score(test_mtx["y_test"], preds)
+        test_f1 = f1_score(test_mtx["y_test"], preds, average="weighted")
         test_prec = precision_score(test_mtx["y_test"], preds, average="weighted")
 
         cols = ["modelname", "loss", "acc", "f1", "prec", "best_epoch"]

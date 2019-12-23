@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 import os
 import pickle
-import pdb
 
 from pathlib import Path
 from sklearn.model_selection import train_test_split
@@ -21,13 +20,13 @@ def preprocess(df, out_path, mode="standard", text_col="reviewText"):
 
     texts = df[text_col].tolist()
 
-    if mode is "standard":
+    if mode == "standard":
         tok = TextPreprocessor()
         tr_fname = "train.npz"
         val_fname = "valid.npz"
         te_fname = "test.npz"
         tok_name = "TextPreprocessor.p"
-    elif mode is "han":
+    elif mode == "han":
         tok = HANPreprocessor()
         tr_fname = "han_train.npz"
         val_fname = "han_valid.npz"
@@ -57,9 +56,7 @@ if __name__ == "__main__":
         os.makedirs(OUT_PATH)
 
     # DATA_PATH = Path('/home/ubuntu/projects/nlp-stuff/datasets/amazon_reviews')
-    df_org = pd.read_json(
-        DATA_PATH / "reviews_Clothing_Shoes_and_Jewelry_5.json.gz", lines=True
-    )
+    df_org = pd.read_json(DATA_PATH / "reviews_Clothing_Shoes_and_Jewelry_5.json.gz", lines=True)
 
     # classes from [0,num_class)
     df = df_org.copy()
