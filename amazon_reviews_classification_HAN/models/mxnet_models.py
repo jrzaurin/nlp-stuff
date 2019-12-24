@@ -33,7 +33,6 @@ class HierAttnNet(Block):
             self.wordattnnet = WordAttnNet(
                 vocab_size=vocab_size,
                 hidden_dim=word_hidden_dim,
-                padding_idx=padding_idx,
                 embed_dim=embed_dim,
                 weight_drop=weight_drop,
                 embed_drop=embed_drop,
@@ -44,7 +43,6 @@ class HierAttnNet(Block):
             self.sentattnnet = SentAttnNet(
                 word_hidden_dim=word_hidden_dim,
                 sent_hidden_dim=sent_hidden_dim,
-                padding_idx=padding_idx,
                 weight_drop=weight_drop,
             )
 

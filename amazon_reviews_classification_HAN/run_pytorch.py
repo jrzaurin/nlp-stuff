@@ -20,7 +20,7 @@ n_cpus = os.cpu_count()
 use_cuda = torch.cuda.is_available()
 
 
-def train_step(model, optimizer, train_loader, epoch, scheduler, metric):
+def train_step(model, optimizer, train_loader, epoch, metric, scheduler=None):
     model.train()
     metric.reset()
     train_steps = len(train_loader)
@@ -153,13 +153,13 @@ if __name__ == "__main__":
 
     train_mtx = np.load(train_dir / ftrain)
     train_set = TensorDataset(
-        torch.Tensor(train_mtx["X_train"][:1000]), torch.Tensor(train_mtx["y_train"][:1000]).long()
+        torch.from_numpy(train_mtx["X_train"][:1000]), torch.from_numpy(train_mtx["y_train"][:1000]).long()
     )
     train_loader = DataLoader(dataset=train_set, batch_size=args.batch_size, num_workers=n_cpus)
 
     valid_mtx = np.load(valid_dir / fvalid)
     eval_set = TensorDataset(
-        torch.Tensor(valid_mtx["X_valid"][:1000]), torch.Tensor(valid_mtx["y_valid"][:1000]).long()
+        torch.from_numpy(valid_mtx["X_valid"][:1000]), torch.from_numpy(valid_mtx["y_valid"][:1000]).long()
     )
     eval_loader = DataLoader(
         dataset=eval_set, batch_size=args.batch_size, num_workers=n_cpus, shuffle=False
@@ -167,7 +167,7 @@ if __name__ == "__main__":
 
     test_mtx = np.load(test_dir / ftest)
     test_set = TensorDataset(
-        torch.Tensor(test_mtx["X_test"][:1000]), torch.Tensor(test_mtx["y_test"][:1000]).long()
+        torch.from_numpy(test_mtx["X_test"][:1000]), torch.from_numpy(test_mtx["y_test"][:1000]).long()
     )
     test_loader = DataLoader(
         dataset=test_set, batch_size=args.batch_size, num_workers=n_cpus, shuffle=False
@@ -233,7 +233,7 @@ if __name__ == "__main__":
     stop_step = 0
     best_loss = 1e6
     for epoch in range(args.n_epochs):
-        train_step(model, optimizer, train_loader, epoch, scheduler, metric)
+        train_step(model, optimizer, train_loader, epoch, metric, scheduler)
         if epoch % args.eval_every == (args.eval_every - 1):
             val_loss, _ = eval_step(model, eval_loader, metric)
             best_loss, stop_step, stop = early_stopping(
