@@ -60,10 +60,7 @@ def eval_step(model, eval_loader, metric, is_test=False):
     metric.reset()
     eval_steps = len(eval_loader)
     running_loss = 0.0
-    if is_test:
-        preds = []
-    else:
-        preds = None
+    preds = []
     with trange(eval_steps) as t:
         for batch_idx, (data, target) in zip(t, eval_loader):
             if is_test:
@@ -93,7 +90,7 @@ def early_stopping(curr_value, best_value, stop_step, patience):
     else:
         stop_step += 1
     if stop_step >= patience:
-        print("Early stopping triggered. patience: {} log:{}".format(patience, curr_value))
+        print("Early stopping triggered. patience: {} log:{}".format(patience, best_value))
         stop = True
     else:
         stop = False
@@ -117,6 +114,7 @@ if __name__ == "__main__":
         if not os.path.exists(p):
             os.makedirs(p)
 
+    pattern = r"\[|\]|,"
     if args.model == "han":
         ftrain, fvalid, ftest = "han_train.npz", "han_valid.npz", "han_test.npz"
         tokf = "HANPreprocessor.p"
@@ -135,6 +133,12 @@ if __name__ == "__main__":
             + str(args.sent_hidden_dim)
             + "_emb_"
             + str(args.embed_dim)
+            + "_drp_"
+            + str(args.last_drop)
+            + "_sch_"
+            + str(args.lr_scheduler).lower()
+            + "_step_"
+            + (re.sub(pattern, "", args.steps_epochs) if args.lr_scheduler != "No" else "no")
             + "_pre_"
             + ("no" if args.embedding_matrix is None else "yes")
         )
@@ -154,10 +158,16 @@ if __name__ == "__main__":
             + str(args.num_layers)
             + "_hd_"
             + str(args.hidden_dim)
-            + "_drp_"
-            + str(args.rnn_dropout)
             + "_emb_"
             + str(args.embed_dim)
+            + "_rdrp_"
+            + str(str(args.rnn_dropout)
+            + "_ldrp_"
+            + str(str(args.last_drop)
+            + "_sch_"
+            + str(args.lr_scheduler)
+            + "_step_"
+            + (re.sub(pattern, "", args.steps_epochs) if args.lr_scheduler != "No" else "no")
             + "_att_"
             + ("yes" if args.with_attention else "no")
             + "_pre_"
@@ -166,7 +176,7 @@ if __name__ == "__main__":
 
     train_mtx = np.load(train_dir / ftrain)
     train_set = gluon.data.dataset.ArrayDataset(
-        train_mtx["X_train"][:1000], train_mtx["y_train"][:1000]
+        train_mtx["X_train"], train_mtx["y_train"]
     )
     train_loader = gluon.data.DataLoader(
         dataset=train_set, batch_size=args.batch_size, num_workers=n_cpus
@@ -174,14 +184,14 @@ if __name__ == "__main__":
 
     valid_mtx = np.load(valid_dir / fvalid)
     eval_set = gluon.data.dataset.ArrayDataset(
-        valid_mtx["X_valid"][:1000], valid_mtx["y_valid"][:1000]
+        valid_mtx["X_valid"], valid_mtx["y_valid"]
     )
     eval_loader = gluon.data.DataLoader(
         dataset=eval_set, batch_size=args.batch_size, num_workers=n_cpus
     )
 
     test_mtx = np.load(test_dir / ftest)
-    test_set = gluon.data.dataset.ArrayDataset(test_mtx["X_test"][:1000], test_mtx["y_test"][:1000])
+    test_set = gluon.data.dataset.ArrayDataset(test_mtx["X_test"], test_mtx["y_test"])
     test_loader = gluon.data.DataLoader(
         dataset=test_set, batch_size=args.batch_size, num_workers=n_cpus
     )

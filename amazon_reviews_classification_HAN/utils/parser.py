@@ -93,5 +93,11 @@ def parse_args():
         default=1,
         help="Patience for ReduceLROnPlateau lr_scheduler before decreasing lr",
     )
+    parser.add_argument(
+        "--steps_epochs",
+        type=str,
+        default='[2,4,6]',
+        help="list of steps to schedule a change for the multifactorscheduler scheduler",
+    )
 
     return parser.parse_args()

@@ -133,7 +133,7 @@ class HANPreprocessor(BasePreprocessor):
             self.vocab = Vocab.create(
                 sents_tokens, max_vocab=self.max_vocab, min_freq=self.min_freq
             )
-            # 'numericalize' each sentence
+        # 'numericalize' each sentence
         sents_numz = [self.vocab.numericalize(s) for s in sents_tokens]
         # group the sentences again into documents
         texts_numz = [

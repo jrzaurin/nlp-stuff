@@ -1,10 +1,10 @@
 import torch
+import warnings
+
 from torch import nn
 
-import pdb
 
-
-class WeightDrop(torch.nn.Module):
+class WeightDrop(nn.Module):
     def __init__(self, module, weights, dropout=0, variational=False, verbose=True):
         super(WeightDrop, self).__init__()
         self.module = module
@@ -52,4 +52,7 @@ class WeightDrop(torch.nn.Module):
 
     def forward(self, *args):
         self._setweights()
-        return self.module.forward(*args)
+        with warnings.catch_warnings():
+            #To avoid the warning that comes because the weights aren't flattened.
+            warnings.simplefilter("ignore")
+            return self.module.forward(*args)

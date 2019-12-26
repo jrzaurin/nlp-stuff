@@ -5,6 +5,7 @@ import torch
 import os
 import torch.nn.functional as F
 
+# from datetime import datetime
 from pathlib import Path
 from tqdm import trange
 from sklearn.metrics import accuracy_score, f1_score, precision_score
@@ -82,7 +83,7 @@ def early_stopping(curr_value, best_value, stop_step, patience):
     else:
         stop_step += 1
     if stop_step >= patience:
-        print("Early stopping triggered. patience: {} log:{}".format(patience, curr_value))
+        print("Early stopping triggered. patience: {} log:{}".format(patience, best_value))
         stop = True
     else:
         stop = False
@@ -106,6 +107,16 @@ if __name__ == "__main__":
         if not os.path.exists(p):
             os.makedirs(p)
 
+    # A more elegant solution to save the results (part I)...
+    # if args.model == "han":
+    #     ftrain, fvalid, ftest = "han_train.npz", "han_valid.npz", "han_test.npz"
+    #     tokf = "HANPreprocessor.p"
+    #     model_name = 'han_' + str(datetime.now()).replace(' ', '_')
+    # elif args.model == "rnn":
+    #     ftrain, fvalid, ftest = "train.npz", "valid.npz", "test.npz"
+    #     tokf = "TextPreprocessor.p"
+    #     model_name = 'rnn_' + str(datetime.now()).replace(' ', '_')
+
     if args.model == "han":
         ftrain, fvalid, ftest = "han_train.npz", "han_valid.npz", "han_test.npz"
         tokf = "HANPreprocessor.p"
@@ -123,6 +134,14 @@ if __name__ == "__main__":
             + str(args.sent_hidden_dim)
             + "_emb_"
             + str(args.embed_dim)
+            + "_drp_"
+            + str(args.last_drop)
+            + "_sch_"
+            + str(args.lr_scheduler)
+            + "_cycl_"
+            + (str(args.n_cycles) if args.lr_scheduler.lower() == "cycliclr" else "no")
+            + "_lrp_"
+            + (str(args.lr_patience) if args.lr_scheduler.lower() == "reducelronplateau" else "no")
             + "_pre_"
             + ("no" if args.embedding_matrix is None else "yes")
         )
@@ -141,10 +160,18 @@ if __name__ == "__main__":
             + str(args.num_layers)
             + "_hd_"
             + str(args.hidden_dim)
-            + "_drp_"
-            + str(args.rnn_dropout)
             + "_emb_"
             + str(args.embed_dim)
+            + "_rdrp_"
+            + str(args.rnn_dropout)
+            + "_ldrp_"
+            + str(args.last_drop)
+            + "_sch_"
+            + str(args.lr_scheduler)
+            + "_cycl_"
+            + (str(args.n_cycles) if args.lr_scheduler.lower() == "cycliclr" else "no")
+            + "_lrp_"
+            + (str(args.lr_patience) if args.lr_scheduler.lower() == "reducelronplateau" else "no")
             + "_att_"
             + ("yes" if args.with_attention else "no")
             + "_pre_"
@@ -153,13 +180,15 @@ if __name__ == "__main__":
 
     train_mtx = np.load(train_dir / ftrain)
     train_set = TensorDataset(
-        torch.from_numpy(train_mtx["X_train"][:1000]), torch.from_numpy(train_mtx["y_train"][:1000]).long()
+        torch.from_numpy(train_mtx["X_train"]),
+        torch.from_numpy(train_mtx["y_train"]).long(),
     )
     train_loader = DataLoader(dataset=train_set, batch_size=args.batch_size, num_workers=n_cpus)
 
     valid_mtx = np.load(valid_dir / fvalid)
     eval_set = TensorDataset(
-        torch.from_numpy(valid_mtx["X_valid"][:1000]), torch.from_numpy(valid_mtx["y_valid"][:1000]).long()
+        torch.from_numpy(valid_mtx["X_valid"]),
+        torch.from_numpy(valid_mtx["y_valid"]).long(),
     )
     eval_loader = DataLoader(
         dataset=eval_set, batch_size=args.batch_size, num_workers=n_cpus, shuffle=False
@@ -167,7 +196,8 @@ if __name__ == "__main__":
 
     test_mtx = np.load(test_dir / ftest)
     test_set = TensorDataset(
-        torch.from_numpy(test_mtx["X_test"][:1000]), torch.from_numpy(test_mtx["y_test"][:1000]).long()
+        torch.from_numpy(test_mtx["X_test"]),
+        torch.from_numpy(test_mtx["y_test"]).long(),
     )
     test_loader = DataLoader(
         dataset=test_set, batch_size=args.batch_size, num_workers=n_cpus, shuffle=False
@@ -223,7 +253,7 @@ if __name__ == "__main__":
             optimizer,
             step_size_up=step_size,
             base_lr=args.lr,
-            max_lr=args.lr * 10,
+            max_lr=args.lr * 10.,
             cycle_momentum=False,
         )
     else:
@@ -268,3 +298,13 @@ if __name__ == "__main__":
             experiment_df = pd.DataFrame(data=[vals], columns=cols)
             results_df = results_df.append(experiment_df, ignore_index=True, sort=False)
             results_df.to_csv(results_tab, index=False)
+
+        # A more elegant solution to save the results (part II)...
+        # results_d = {}
+        # results_d['args'] = args.__dict__
+        # results_d['best_epoch'] = best_epoch
+        # results_d['loss'] = test_loss
+        # results_d['acc']  = accuracy_score(test_mtx["y_test"], preds)
+        # results_d['f1']   = f1_score(test_mtx["y_test"], preds, average="weighted")
+        # results_d['prec'] = precision_score(test_mtx["y_test"], preds, average="weighted")
+        # pickle.dump(results_d, open(os.path.join(args.log_dir, model_name) + ".p", 'wb'))
