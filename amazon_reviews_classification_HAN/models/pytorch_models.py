@@ -8,6 +8,7 @@ from .embed_regularize import embedded_dropout
 from .locked_dropout import LockedDropout
 from .weight_dropout import WeightDrop
 
+
 use_cuda = torch.cuda.is_available()
 
 
@@ -58,14 +59,16 @@ class HierAttnNet(nn.Module):
         word_h_n = nn.init.zeros_(torch.Tensor(2, X.shape[0], self.word_hidden_dim))
         if use_cuda:
             word_h_n = word_h_n.cuda()
-        sent_list = []
+        word_a_list, word_s_list = [], []
         for sent in x:
-            out, word_h_n = self.wordattnnet(sent, word_h_n)
-            sent_list.append(out)
-        doc = torch.cat(sent_list, 1)
-        out = self.sentattnnet(doc)
-        out = self.ld(out)
-        return self.fc(out)
+            word_a, word_s, word_h_n = self.wordattnnet(sent, word_h_n)
+            word_a_list.append(word_a)
+            word_s_list.append(word_s)
+        self.sent_a = torch.cat(word_a_list, 1)
+        sent_s = torch.cat(word_s_list, 1)
+        self.doc_a, doc_s = self.sentattnnet(sent_s)
+        doc_s = self.ld(doc_s)
+        return self.fc(doc_s)
 
 
 class RNNAttn(nn.Module):
@@ -130,7 +133,7 @@ class RNNAttn(nn.Module):
 
         o, (h, c) = self.rnn(embed)
         if self.with_attention:
-            out = self.attn(o)
+            self.attn_w, out = self.attn(o)
         else:
             out = torch.cat((h[-2], h[-1]), dim=1)
 
@@ -168,7 +171,7 @@ class WordAttnNet(nn.Module):
 
         self.rnn = nn.GRU(embed_dim, hidden_dim, bidirectional=True, batch_first=True)
         if weight_drop:
-            self.rnn = WeightDrop(self.rnn, ["weight_hh_l0"], dropout=weight_drop)
+            self.rnn = WeightDrop(self.rnn, ["weight_hh_l0", "weight_hh_l0_reverse"], dropout=weight_drop)
 
         self.word_attn = AttentionWithContext(hidden_dim * 2)
 
@@ -183,8 +186,8 @@ class WordAttnNet(nn.Module):
             embed = self.lockdrop(embed, self.locked_drop)
 
         h_t, h_n = self.rnn(embed, h_n)
-        s = self.word_attn(h_t).unsqueeze(1)
-        return s, h_n
+        a, s = self.word_attn(h_t)
+        return a, s.unsqueeze(1), h_n
 
 
 class SentAttnNet(nn.Module):
@@ -197,14 +200,14 @@ class SentAttnNet(nn.Module):
             word_hidden_dim * 2, sent_hidden_dim, bidirectional=True, batch_first=True
         )
         if weight_drop:
-            self.rnn = WeightDrop(self.rnn, ["weight_hh_l0"], dropout=weight_drop)
+            self.rnn = WeightDrop(self.rnn, ["weight_hh_l0", "weight_hh_l0_reverse"], dropout=weight_drop)
 
         self.sent_attn = AttentionWithContext(sent_hidden_dim * 2)
 
     def forward(self, X):
         h_t, h_n = self.rnn(X)
-        v = self.sent_attn(h_t)
-        return v
+        a, v = self.sent_attn(h_t)
+        return a.permute(0,2,1), v
 
 
 class Attention(nn.Module):
@@ -220,9 +223,8 @@ class Attention(nn.Module):
         x = inp.contiguous().view(-1, self.hidden_dim)
         u = torch.tanh_(torch.mm(x, self.weight).view(-1, self.seq_len) + self.bias)
         a = F.softmax(u, dim=1)
-        self.attn_weights = a
         s = (inp * torch.unsqueeze(a, 2)).sum(1)
-        return s
+        return a, s
 
 
 class AttentionWithContext(nn.Module):
@@ -235,6 +237,5 @@ class AttentionWithContext(nn.Module):
     def forward(self, inp):
         u = torch.tanh_(self.attn(inp))
         a = F.softmax(self.contx(u), dim=1)
-        self.attn_weights = a
         s = (a * inp).sum(1)
-        return s
+        return a.permute(0, 2, 1), s

@@ -140,10 +140,9 @@ class HANPreprocessor(BasePreprocessor):
             sents_numz[range_idx[i] : range_idx[i + 1]] for i in range(len(range_idx[:-1]))
         ]
         # compute max lengths for padding purposes
-        sorted_sent_length = sorted(sents_length)
-        sorted_review_length = sorted(texts_length[1:])
-        self.maxlen_sent = sorted_sent_length[int(self.q * len(sorted_sent_length))]
-        self.maxlen_doc = sorted_review_length[int(self.q * len(sorted_review_length))]
+        self.maxlen_sent = int(np.quantile(sents_length, q=q))
+        self.maxlen_doc  = int(np.quantile(texts_length[1:], q=q))
+
         if self.verbose:
             print("Padding sentences and documents...")
         padded_texts = [

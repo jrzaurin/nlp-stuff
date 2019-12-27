@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import pickle
 import os
+import re
 
 from pathlib import Path
 from functools import partial
@@ -138,7 +139,7 @@ if __name__ == "__main__":
             + "_sch_"
             + str(args.lr_scheduler).lower()
             + "_step_"
-            + (re.sub(pattern, "", args.steps_epochs) if args.lr_scheduler != "No" else "no")
+            + (re.sub(pattern, "", args.steps_epochs) if str(args.lr_scheduler).lower() != "no" else "no")
             + "_pre_"
             + ("no" if args.embedding_matrix is None else "yes")
         )
@@ -161,9 +162,9 @@ if __name__ == "__main__":
             + "_emb_"
             + str(args.embed_dim)
             + "_rdrp_"
-            + str(str(args.rnn_dropout)
+            + str(args.rnn_dropout)
             + "_ldrp_"
-            + str(str(args.last_drop)
+            + str(args.last_drop)
             + "_sch_"
             + str(args.lr_scheduler)
             + "_step_"
@@ -231,7 +232,7 @@ if __name__ == "__main__":
     model.initialize(ctx=ctx)
     # model.hybridize()
     if args.lr_scheduler.lower() == "multifactorscheduler":
-        steps_epochs = [2, 4, 6]
+        steps_epochs = eval(args.steps_epochs)
         iterations_per_epoch = np.ceil(len(train_loader))
         steps_iterations = [s * iterations_per_epoch for s in steps_epochs]
         schedule = mx.lr_scheduler.MultiFactorScheduler(step=steps_iterations, factor=0.4)

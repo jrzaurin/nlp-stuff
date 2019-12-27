@@ -78,8 +78,8 @@ def parse_args():
     parser.add_argument(
         "--lr_scheduler",
         type=str,
-        default="No",
-        help="Specify the lr_scheduler {multifactorscheduler, reducelronplateau, cycliclr, No (nothing)}",
+        default="no",
+        help="Specify the lr_scheduler {multifactorscheduler, reducelronplateau, cycliclr, no (nothing)}",
     )
     parser.add_argument(
         "--n_cycles", type=int, default=1, help="number of cycles when using cycliclr"

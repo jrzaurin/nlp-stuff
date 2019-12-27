@@ -11,6 +11,7 @@ __pycache__*
 Untitled*.ipynb
 data/
 results/
+tmp.py
 
 # tests
 .coverage

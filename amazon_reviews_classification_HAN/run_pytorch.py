@@ -134,7 +134,7 @@ if __name__ == "__main__":
             + str(args.sent_hidden_dim)
             + "_emb_"
             + str(args.embed_dim)
-            + "_drp_"
+            + "_drp_bi_"
             + str(args.last_drop)
             + "_sch_"
             + str(args.lr_scheduler)
