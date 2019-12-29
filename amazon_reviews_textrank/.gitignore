@@ -6,9 +6,6 @@ __pycache__*
 .ipynb_checkpoints
 Untitled*.ipynb
 data/
-features/
-notebooks/utils/
-results/
 
 # sublime
 *.sublime-workspace
