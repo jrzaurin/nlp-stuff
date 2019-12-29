@@ -134,10 +134,10 @@ if __name__ == "__main__":
             + str(args.sent_hidden_dim)
             + "_emb_"
             + str(args.embed_dim)
-            + "_drp_bi_"
+            + "_drp_"
             + str(args.last_drop)
             + "_sch_"
-            + str(args.lr_scheduler)
+            + str(args.lr_scheduler).lower()
             + "_cycl_"
             + (str(args.n_cycles) if args.lr_scheduler.lower() == "cycliclr" else "no")
             + "_lrp_"
@@ -164,10 +164,10 @@ if __name__ == "__main__":
             + str(args.embed_dim)
             + "_rdrp_"
             + str(args.rnn_dropout)
-            + "_ldrp_"
+            + "_drp_"
             + str(args.last_drop)
             + "_sch_"
-            + str(args.lr_scheduler)
+            + str(args.lr_scheduler).lower()
             + "_cycl_"
             + (str(args.n_cycles) if args.lr_scheduler.lower() == "cycliclr" else "no")
             + "_lrp_"
@@ -226,9 +226,9 @@ if __name__ == "__main__":
             maxlen=tok.maxlen,
             num_layers=args.num_layers,
             hidden_dim=args.hidden_dim,
-            rnn_dropout=args.rnn_dropout,
             padding_idx=args.padding_idx,
             embed_dim=args.embed_dim,
+            rnn_dropout=args.rnn_dropout,
             embed_drop=args.embed_drop,
             locked_drop=args.locked_drop,
             last_drop=args.last_drop,

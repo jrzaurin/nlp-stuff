@@ -66,7 +66,8 @@ class HierAttnNet(nn.Module):
             word_s_list.append(word_s)
         self.sent_a = torch.cat(word_a_list, 1)
         sent_s = torch.cat(word_s_list, 1)
-        self.doc_a, doc_s = self.sentattnnet(sent_s)
+        doc_a, doc_s = self.sentattnnet(sent_s)
+        self.doc_a  = doc_a.permute(0,2,1)
         doc_s = self.ld(doc_s)
         return self.fc(doc_s)
 
@@ -78,9 +79,9 @@ class RNNAttn(nn.Module):
         maxlen,
         num_layers=3,
         hidden_dim=32,
-        rnn_dropout=0.0,
         padding_idx=1,
         embed_dim=50,
+        rnn_dropout=0.0,
         embed_drop=0.0,
         locked_drop=0.0,
         last_drop=0.0,
@@ -207,7 +208,7 @@ class SentAttnNet(nn.Module):
     def forward(self, X):
         h_t, h_n = self.rnn(X)
         a, v = self.sent_attn(h_t)
-        return a.permute(0,2,1), v
+        return a, v
 
 
 class Attention(nn.Module):

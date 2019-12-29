@@ -16,7 +16,6 @@ from mxnet.metric import Accuracy
 from models.mxnet_models import HierAttnNet, RNNAttn
 from utils.parser import parse_args
 
-
 n_cpus = os.cpu_count()
 ctx = mx.gpu() if mx.context.num_gpus() else mx.cpu()
 

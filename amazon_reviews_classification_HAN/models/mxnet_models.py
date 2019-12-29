@@ -5,6 +5,9 @@ from mxnet import nd, init
 from mxnet.gluon import nn, rnn, Block
 from gluonnlp.model.utils import apply_weight_drop
 
+
+import pdb
+
 ctx = mx.gpu() if mx.context.num_gpus() else mx.cpu()
 
 
@@ -52,14 +55,17 @@ class HierAttnNet(Block):
     def forward(self, X):
         x = X.transpose(axes=(1, 0, 2))
         word_h_n = nd.zeros(shape=(2, X.shape[0], self.word_hidden_dim), ctx=ctx)
-        sent_list = []
+        word_a_list, word_s_list = [], []
         for sent in x:
-            out, word_h_n = self.wordattnnet(sent, word_h_n)
-            sent_list.append(out)
-        doc = nd.concat(*sent_list, dim=1)
-        out = self.sentattnnet(doc)
-        out = self.ld(out)
-        return self.fc(out)
+            word_a, word_s, word_h_n = self.wordattnnet(sent, word_h_n)
+            word_a_list.append(word_a)
+            word_s_list.append(word_s)
+        self.sent_a = nd.concat(*word_a_list, dim=1)
+        sent_s = nd.concat(*word_s_list, dim=1)
+        doc_a, doc_s = self.sentattnnet(sent_s)
+        self.doc_a = doc_a.transpose(axes=(0, 2, 1))
+        doc_s = self.ld(doc_s)
+        return self.fc(doc_s)
 
 
 class RNNAttn(Block):
@@ -114,7 +120,7 @@ class RNNAttn(Block):
         c0 = nd.zeros(shape=(self.num_layers * 2, X.shape[0], self.hidden_dim), ctx=ctx)
         o, (h, c) = self.rnn(embed, [h0, c0])
         if self.with_attention:
-            out = self.attn(o)
+            self.attn_w, out = self.attn(o)
         else:
             out = nd.concat(*[h[-2], h[-1]], dim=1)
 
@@ -155,8 +161,8 @@ class WordAttnNet(Block):
     def forward(self, X, h_n):
         x = self.word_embed(X)
         h_t, h_n = self.rnn(x, h_n)
-        s = self.word_attn(h_t).expand_dims(1)
-        return s, h_n
+        a, s = self.word_attn(h_t)
+        return a, s.expand_dims(1), h_n
 
 
 class SentAttnNet(Block):
@@ -177,8 +183,8 @@ class SentAttnNet(Block):
 
     def forward(self, X):
         h_t = self.rnn(X)
-        v = self.sent_attn(h_t)
-        return v
+        a, v = self.sent_attn(h_t)
+        return a, v
 
 
 class Attention(Block):
@@ -188,16 +194,15 @@ class Attention(Block):
         self.hidden_dim = hidden_dim
         self.seq_len = seq_len
         with self.name_scope():
-            self.weight = nd.random.normal(shape=(hidden_dim, 1))
-            self.bias = nd.zeros(seq_len)
+            self.weight = nd.random.normal(shape=(hidden_dim, 1), ctx=ctx)
+            self.bias = nd.zeros(seq_len, ctx=ctx)
 
     def forward(self, inp):
         x = inp.reshape(-1, self.hidden_dim)
         u = nd.tanh(nd.dot(x, self.weight).reshape(-1, self.seq_len) + self.bias)
-        a = nd.softmax(u, dim=1)
-        self.attn_weights = a
+        a = nd.softmax(u, axis=1)
         s = (inp * a.expand_dims(2)).sum(1)
-        return s
+        return a, s
 
 
 class AttentionWithContext(Block):
@@ -211,10 +216,8 @@ class AttentionWithContext(Block):
     def forward(self, inp):
         u = nd.tanh(self.attn(inp))
         a = nd.softmax(self.contx(u), axis=1)
-        self.attn_weights = a
         s = (a * inp).sum(1)
-        return s
-
+        return a.transpose(axes=(0, 2, 1)), s
 
 def get_embedding(vocab_size, embed_dim, embed_drop, locked_drop, embedding_matrix):
     embedding = nn.HybridSequential()

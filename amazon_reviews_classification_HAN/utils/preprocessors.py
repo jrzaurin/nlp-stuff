@@ -26,10 +26,13 @@ def simple_preprocess(doc, lower=False, deacc=False, min_len=2, max_len=15):
     return tokens
 
 
-def get_texts(texts, with_preprocess=False):
+def get_texts(texts, with_preprocess=False, pre_rules=None):
+    tok_func = Tokenizer()
     if with_preprocess:
         texts = [" ".join(simple_preprocess(s)) for s in texts]
-    tokens = Tokenizer().process_all(texts)
+    if pre_rules:
+         tok_func.pre_rules = pre_rules + tok_func.pre_rules
+    tokens = tok_func.process_all(texts)
     return tokens
 
 

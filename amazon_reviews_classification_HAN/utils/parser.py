@@ -28,12 +28,6 @@ def parse_args():
         help="embeddings dropout. Taken from the awd-lstm lm from Salesforce: https://github.com/salesforce/awd-lstm-lm",
     )
     parser.add_argument(
-        "--weight_drop",
-        type=float,
-        default=0.0,
-        help="weight dropout. Taken from the awd-lstm lm from Salesforce: https://github.com/salesforce/awd-lstm-lm",
-    )
-    parser.add_argument(
         "--locked_drop",
         type=float,
         default=0.0,
@@ -62,6 +56,12 @@ def parse_args():
         type=int,
         default=32,
         help="hidden dimension for the GRU processing senteces.",
+    )
+    parser.add_argument(
+        "--weight_drop",
+        type=float,
+        default=0.0,
+        help="weight dropout. Taken from the awd-lstm lm from Salesforce: https://github.com/salesforce/awd-lstm-lm",
     )
 
     # RNN parameters
