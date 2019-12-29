@@ -1,3 +1,7 @@
+<p align="center">
+  <img width="450" src="docs/figures/nlp_stuff_logo.png">
+</p>
+
 ## NLP stuff
 
 Here I intend to add stuff related to NLP.
