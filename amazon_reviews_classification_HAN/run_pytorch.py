@@ -180,15 +180,13 @@ if __name__ == "__main__":
 
     train_mtx = np.load(train_dir / ftrain)
     train_set = TensorDataset(
-        torch.from_numpy(train_mtx["X_train"]),
-        torch.from_numpy(train_mtx["y_train"]).long(),
+        torch.from_numpy(train_mtx["X_train"]), torch.from_numpy(train_mtx["y_train"]).long(),
     )
     train_loader = DataLoader(dataset=train_set, batch_size=args.batch_size, num_workers=n_cpus)
 
     valid_mtx = np.load(valid_dir / fvalid)
     eval_set = TensorDataset(
-        torch.from_numpy(valid_mtx["X_valid"]),
-        torch.from_numpy(valid_mtx["y_valid"]).long(),
+        torch.from_numpy(valid_mtx["X_valid"]), torch.from_numpy(valid_mtx["y_valid"]).long(),
     )
     eval_loader = DataLoader(
         dataset=eval_set, batch_size=args.batch_size, num_workers=n_cpus, shuffle=False
@@ -196,8 +194,7 @@ if __name__ == "__main__":
 
     test_mtx = np.load(test_dir / ftest)
     test_set = TensorDataset(
-        torch.from_numpy(test_mtx["X_test"]),
-        torch.from_numpy(test_mtx["y_test"]).long(),
+        torch.from_numpy(test_mtx["X_test"]), torch.from_numpy(test_mtx["y_test"]).long(),
     )
     test_loader = DataLoader(
         dataset=test_set, batch_size=args.batch_size, num_workers=n_cpus, shuffle=False
@@ -253,7 +250,7 @@ if __name__ == "__main__":
             optimizer,
             step_size_up=step_size,
             base_lr=args.lr,
-            max_lr=args.lr * 10.,
+            max_lr=args.lr * 10.0,
             cycle_momentum=False,
         )
     else:

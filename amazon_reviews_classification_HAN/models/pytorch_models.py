@@ -67,7 +67,7 @@ class HierAttnNet(nn.Module):
         self.sent_a = torch.cat(word_a_list, 1)
         sent_s = torch.cat(word_s_list, 1)
         doc_a, doc_s = self.sentattnnet(sent_s)
-        self.doc_a  = doc_a.permute(0,2,1)
+        self.doc_a = doc_a.permute(0, 2, 1)
         doc_s = self.ld(doc_s)
         return self.fc(doc_s)
 
@@ -172,7 +172,9 @@ class WordAttnNet(nn.Module):
 
         self.rnn = nn.GRU(embed_dim, hidden_dim, bidirectional=True, batch_first=True)
         if weight_drop:
-            self.rnn = WeightDrop(self.rnn, ["weight_hh_l0", "weight_hh_l0_reverse"], dropout=weight_drop)
+            self.rnn = WeightDrop(
+                self.rnn, ["weight_hh_l0", "weight_hh_l0_reverse"], dropout=weight_drop
+            )
 
         self.word_attn = AttentionWithContext(hidden_dim * 2)
 
@@ -201,7 +203,9 @@ class SentAttnNet(nn.Module):
             word_hidden_dim * 2, sent_hidden_dim, bidirectional=True, batch_first=True
         )
         if weight_drop:
-            self.rnn = WeightDrop(self.rnn, ["weight_hh_l0", "weight_hh_l0_reverse"], dropout=weight_drop)
+            self.rnn = WeightDrop(
+                self.rnn, ["weight_hh_l0", "weight_hh_l0_reverse"], dropout=weight_drop
+            )
 
         self.sent_attn = AttentionWithContext(sent_hidden_dim * 2)
 

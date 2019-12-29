@@ -38,7 +38,6 @@ class WeightDrop(nn.Module):
             raw_w = getattr(self.module, name_w + "_raw")
             w = None
             if self.variational:
-                pdb.set_trace()
                 mask = torch.ones(raw_w.size(0), 1)
                 if raw_w.is_cuda:
                     mask = mask.cuda()
@@ -53,6 +52,6 @@ class WeightDrop(nn.Module):
     def forward(self, *args):
         self._setweights()
         with warnings.catch_warnings():
-            #To avoid the warning that comes because the weights aren't flattened.
+            # To avoid the warning that comes because the weights aren't flattened.
             warnings.simplefilter("ignore")
             return self.module.forward(*args)

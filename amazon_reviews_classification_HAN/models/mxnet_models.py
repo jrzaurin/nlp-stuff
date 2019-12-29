@@ -6,8 +6,6 @@ from mxnet.gluon import nn, rnn, Block
 from gluonnlp.model.utils import apply_weight_drop
 
 
-import pdb
-
 ctx = mx.gpu() if mx.context.num_gpus() else mx.cpu()
 
 
@@ -218,6 +216,7 @@ class AttentionWithContext(Block):
         a = nd.softmax(self.contx(u), axis=1)
         s = (a * inp).sum(1)
         return a.transpose(axes=(0, 2, 1)), s
+
 
 def get_embedding(vocab_size, embed_dim, embed_drop, locked_drop, embedding_matrix):
     embedding = nn.HybridSequential()

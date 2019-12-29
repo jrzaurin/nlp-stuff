@@ -31,7 +31,7 @@ def get_texts(texts, with_preprocess=False, pre_rules=None):
     if with_preprocess:
         texts = [" ".join(simple_preprocess(s)) for s in texts]
     if pre_rules:
-         tok_func.pre_rules = pre_rules + tok_func.pre_rules
+        tok_func.pre_rules = pre_rules + tok_func.pre_rules
     tokens = tok_func.process_all(texts)
     return tokens
 
@@ -143,8 +143,8 @@ class HANPreprocessor(BasePreprocessor):
             sents_numz[range_idx[i] : range_idx[i + 1]] for i in range(len(range_idx[:-1]))
         ]
         # compute max lengths for padding purposes
-        self.maxlen_sent = int(np.quantile(sents_length, q=q))
-        self.maxlen_doc  = int(np.quantile(texts_length[1:], q=q))
+        self.maxlen_sent = int(np.quantile(sents_length, q=self.q))
+        self.maxlen_doc = int(np.quantile(texts_length[1:], q=self.q))
 
         if self.verbose:
             print("Padding sentences and documents...")
@@ -195,7 +195,8 @@ class TextPreprocessor(BasePreprocessor):
             self.vocab = Vocab.create(tokens, max_vocab=self.max_vocab, min_freq=self.min_freq)
         texts_numz = [self.vocab.numericalize(t) for t in texts]
         sorted_texts_length = sorted(texts_length)
-        self.maxlen = sorted_texts_length[int(self.q * len(sorted_texts_length))]
+        self.maxlen = int(np.quantile(sorted_texts_length, q=self.q))
+        # self.maxlen = sorted_texts_length[int(self.q * len(sorted_texts_length))]
         if self.verbose:
             print("Padding documents...")
         padded_texts = [pad_sequences(t, self.maxlen) for t in texts_numz]

@@ -1,5 +1,4 @@
 import matplotlib
-import matplotlib.pyplot as plt
 
 
 def attention_to_html(text, attnw, out_path, cmap="Greens"):

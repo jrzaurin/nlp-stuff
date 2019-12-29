@@ -138,7 +138,11 @@ if __name__ == "__main__":
             + "_sch_"
             + str(args.lr_scheduler).lower()
             + "_step_"
-            + (re.sub(pattern, "", args.steps_epochs) if str(args.lr_scheduler).lower() != "no" else "no")
+            + (
+                re.sub(pattern, "", args.steps_epochs)
+                if str(args.lr_scheduler).lower() != "no"
+                else "no"
+            )
             + "_pre_"
             + ("no" if args.embedding_matrix is None else "yes")
         )
@@ -175,17 +179,13 @@ if __name__ == "__main__":
         )
 
     train_mtx = np.load(train_dir / ftrain)
-    train_set = gluon.data.dataset.ArrayDataset(
-        train_mtx["X_train"], train_mtx["y_train"]
-    )
+    train_set = gluon.data.dataset.ArrayDataset(train_mtx["X_train"], train_mtx["y_train"])
     train_loader = gluon.data.DataLoader(
         dataset=train_set, batch_size=args.batch_size, num_workers=n_cpus
     )
 
     valid_mtx = np.load(valid_dir / fvalid)
-    eval_set = gluon.data.dataset.ArrayDataset(
-        valid_mtx["X_valid"], valid_mtx["y_valid"]
-    )
+    eval_set = gluon.data.dataset.ArrayDataset(valid_mtx["X_valid"], valid_mtx["y_valid"])
     eval_loader = gluon.data.DataLoader(
         dataset=eval_set, batch_size=args.batch_size, num_workers=n_cpus
     )
