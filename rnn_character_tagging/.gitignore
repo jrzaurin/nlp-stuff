@@ -1,0 +1,17 @@
+#python
+__pycache__*
+*.pyc
+
+# jupyter / ipython
+.ipynb_checkpoints
+Untitled*.ipynb
+data/
+features/
+notebooks/*.py
+
+# sublime
+*.sublime-workspace
+sftp*-config.json
+
+# misc
+.DS_store
