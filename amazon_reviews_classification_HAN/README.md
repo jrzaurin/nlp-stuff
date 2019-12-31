@@ -38,8 +38,8 @@ might be:
 
 ```python
 python main_pytorch.py --batch_size 64 --embed_dim 300 --word_hidden_dim 64 --sent_hidden_dim 64 \
---embed_drop 0.2 --weight_drop 0.2 --locked_drop 0.2 --last_drop 0.2  --lr_scheduler reducelronplateau \
---lr_patience 2 --patience 4 --save_results
+--embed_drop 0.2 --weight_drop 0.2 --locked_drop 0.2 --last_drop 0.2 \
+--lr_scheduler reducelronplateau --lr_patience 2 --patience 4 --save_results
 ```
 
 This will run the `Pytorch` implementation with batch size of 64 reviews, word
