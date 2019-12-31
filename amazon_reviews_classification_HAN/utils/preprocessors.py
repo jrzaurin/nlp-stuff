@@ -10,63 +10,6 @@ from sklearn.exceptions import NotFittedError
 n_cpus = os.cpu_count()
 
 
-def test_idx_groups(nested_list, flat_list, idx_seq):
-    res_nested_list = [flat_list[idx_seq[i] : idx_seq[i + 1]] for i in range(len(idx_seq[:-1]))]
-    rand_ids = np.random.choice(len(idx_seq), 100)
-    res = [res_nested_list[i] == nested_list[i] for i in rand_ids]
-    return all(res)
-
-
-def simple_preprocess(doc, lower=False, deacc=False, min_len=2, max_len=15):
-    tokens = [
-        token
-        for token in tokenize(doc, lower=False, deacc=deacc, errors="ignore")
-        if min_len <= len(token) <= max_len and not token.startswith("_")
-    ]
-    return tokens
-
-
-def get_texts(texts, with_preprocess=False, pre_rules=None):
-    tok_func = Tokenizer()
-    if with_preprocess:
-        texts = [" ".join(simple_preprocess(s)) for s in texts]
-    if pre_rules:
-        tok_func.pre_rules = pre_rules + tok_func.pre_rules
-    tokens = tok_func.process_all(texts)
-    return tokens
-
-
-def pad_sequences(seq, maxlen, pad_first=True, pad_idx=1):
-    if len(seq) >= maxlen:
-        res = np.array(seq[-maxlen:]).astype("int32")
-        return res
-    else:
-        res = np.zeros(maxlen, dtype="int32") + pad_idx
-        if pad_first:
-            res[-len(seq) :] = seq
-        else:
-            res[: len(seq) :] = seq
-        return res
-
-
-def pad_nested_sequences(
-    seq, maxlen_sent, maxlen_doc, pad_sent_first=True, pad_doc_first=False, pad_idx=1
-):
-    seq = [s for s in seq if len(s) >= 1]
-    if len(seq) == 0:
-        return np.array([[pad_idx] * maxlen_sent] * maxlen_doc).astype("int32")
-    seq = [pad_sequences(s, maxlen_sent, pad_sent_first, pad_idx) for s in seq]
-    if len(seq) >= maxlen_doc:
-        return np.array(seq[:maxlen_doc])
-    else:
-        res = np.array([[pad_idx] * maxlen_sent] * maxlen_doc).astype("int32")
-        if pad_doc_first:
-            res[-len(seq) :] = seq
-        else:
-            res[: len(seq) :] = seq
-        return res
-
-
 class BasePreprocessor(object):
     def __init__(self):
         super(BasePreprocessor, self).__init__()
@@ -79,6 +22,33 @@ class BasePreprocessor(object):
 
 
 class HANPreprocessor(BasePreprocessor):
+    r"""
+    Preprocessor to prepare the data for Hierarchical Attention Networks.
+    It will "tokenize" a document into sentences and sentences into tokens
+
+    Parameters:
+    ----------
+    batch_size: Int
+        Int indicating the batch size for Spacy's pipe parallel processes
+    max_vocab: Int. Default=30000
+        max vocabulary size
+    min_freq: Int. Default=5
+        min token frequency for a token to be considered
+    q: Float. Default=0.8
+        quantile used to select the padding maxlen
+    pad_sent_first: Boolean. Default=True
+    pad_doc_first: Boolean. Default=True
+    pad_idx: Int. Default=1
+    tok_func: Any. Default=None
+        Custom tokenizer. Must be an spacy.lang type or equivalent
+    n_cpus: Int
+    verbose: Boolean. Default=True
+
+    Returns:
+    -------
+    np.ndarray with stacked padded sequences
+    """
+
     def __init__(
         self,
         batch_size=1000,
@@ -173,12 +143,34 @@ class HANPreprocessor(BasePreprocessor):
 
 
 class TextPreprocessor(BasePreprocessor):
-    def __init__(self, max_vocab=30000, min_freq=5, q=0.8, verbose=1):
+    r"""
+    Preprocessor to prepare the data for a standard RNN classification process.
+
+    Parameters:
+    ----------
+    max_vocab: Int. Default=30000
+        max vocabulary size
+    min_freq: Int. Default=5
+        min token frequency for a token to be considered
+    q: Float. Default=0.8
+        quantile used to select the padding maxlen
+    pad_first: Boolean. Default=True
+    pad_idx: Int. Default=1
+    verbose: Boolean. Default=True
+
+    Returns:
+    -------
+    np.ndarray with stacked padded sequences
+    """
+
+    def __init__(self, max_vocab=30000, min_freq=5, q=0.8, pad_first=True, pad_idx=1, verbose=1):
         super(TextPreprocessor, self).__init__()
         self.max_vocab = max_vocab
         self.min_freq = min_freq
-        self.verbose = verbose
         self.q = q
+        self.pad_first = pad_first
+        self.pad_idx = pad_idx
+        self.verbose = verbose
 
     def tokenize(self, texts):
         if self.verbose:
@@ -199,7 +191,10 @@ class TextPreprocessor(BasePreprocessor):
         # self.maxlen = sorted_texts_length[int(self.q * len(sorted_texts_length))]
         if self.verbose:
             print("Padding documents...")
-        padded_texts = [pad_sequences(t, self.maxlen) for t in texts_numz]
+        padded_texts = [
+            pad_sequences(t, self.maxlen, pad_first=self.pad_first, pad_idx=self.pad_idx)
+            for t in texts_numz
+        ]
         return np.stack(padded_texts, axis=0)
 
     def transform(self, texts):
@@ -211,3 +206,98 @@ class TextPreprocessor(BasePreprocessor):
                 "Call 'tokenize' with appropriate arguments before using this estimator."
             )
         return self.tokenize(texts)
+
+
+def simple_preprocess(doc, lower=False, deacc=False, min_len=2, max_len=15):
+    r"""
+    Gensim's simple_preprocess adding a 'lower' param to indicate wether or not to
+    lower case all the token in the texts
+    For more informations see: https://radimrehurek.com/gensim/utils.html
+    """
+    tokens = [
+        token
+        for token in tokenize(doc, lower=False, deacc=deacc, errors="ignore")
+        if min_len <= len(token) <= max_len and not token.startswith("_")
+    ]
+    return tokens
+
+
+def get_texts(texts, with_preprocess=False, pre_rules=None):
+    r"""
+    Uses fastai's Tokenizer because it does a series of very convenients things
+    during the tokenization process
+    See here: https://docs.fast.ai/text.transform.html#Tokenizer
+    """
+    tok_func = Tokenizer()
+    if with_preprocess:
+        texts = [" ".join(simple_preprocess(s)) for s in texts]
+    if pre_rules:
+        tok_func.pre_rules = pre_rules + tok_func.pre_rules
+    tokens = tok_func.process_all(texts)
+    return tokens
+
+
+def pad_sequences(seq, maxlen, pad_first=True, pad_idx=1):
+    r"""
+    Given a List of tokenized and 'numericalised' sequences it will return padded sequences
+    according to the input parameters maxlen, pad_first and pad_idx
+
+    Parameters
+    ----------
+    seq: List
+        List of int tokens
+    maxlen: Int
+        Maximum length of the padded sequences
+    pad_first: Boolean. Default=True
+        Indicates whether the padding index will be added at the beginning or the
+        end of the sequences
+    pad_idx: Int. Default=1
+        padding index. Default=1, Fastai's Tokenizer leaves 0 for the 'unknown' token.
+
+    Returns:
+    res: np.ndarray
+        Padded sequences
+    """
+    if len(seq) >= maxlen:
+        res = np.array(seq[-maxlen:]).astype("int32")
+        return res
+    else:
+        res = np.zeros(maxlen, dtype="int32") + pad_idx
+        if pad_first:
+            res[-len(seq) :] = seq
+        else:
+            res[: len(seq) :] = seq
+        return res
+
+
+def pad_nested_sequences(
+    seq, maxlen_sent, maxlen_doc, pad_sent_first=True, pad_doc_first=False, pad_idx=1
+):
+    r"""
+    Same as pad_sequences but for nested Lists
+    """
+    seq = [s for s in seq if len(s) >= 1]
+    if len(seq) == 0:
+        return np.array([[pad_idx] * maxlen_sent] * maxlen_doc).astype("int32")
+    seq = [pad_sequences(s, maxlen_sent, pad_sent_first, pad_idx) for s in seq]
+    if len(seq) >= maxlen_doc:
+        return np.array(seq[:maxlen_doc])
+    else:
+        res = np.array([[pad_idx] * maxlen_sent] * maxlen_doc).astype("int32")
+        if pad_doc_first:
+            res[-len(seq) :] = seq
+        else:
+            res[: len(seq) :] = seq
+        return res
+
+
+def test_idx_groups(nested_list, flat_list, idx_seq):
+    r"""
+    ***CAN BE IGNORED***
+    Helper function I used to check that the folding/unfolding process on
+    nested list was working properly.
+    """
+    res_nested_list = [flat_list[idx_seq[i] : idx_seq[i + 1]] for i in range(len(idx_seq[:-1]))]
+    rand_ids = np.random.choice(len(idx_seq), 100)
+    res = [res_nested_list[i] == nested_list[i] for i in rand_ids]
+    return all(res)

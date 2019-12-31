@@ -1,3 +1,8 @@
+"""
+Here I simply illustrate how some implemenation I found online are inefficient
+because they use loops instenad of using Pytorch broadcasting abilities
+"""
+
 import torch
 import pytest
 

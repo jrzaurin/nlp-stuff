@@ -1,3 +1,9 @@
+"""
+Code here is taken from my repo: https://github.com/jrzaurin/pytorch-widedeep/blob/master/pytorch_widedeep/metrics.py
+which is in itself inspired by torchsample: https://github.com/ncullen93/torchsample
+which is in itself inpired in many aspects by Keras.
+"""
+
 import numpy as np
 
 

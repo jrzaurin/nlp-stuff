@@ -1,3 +1,8 @@
+"""
+Pytorch Implementation of Hierarchical Attention Networks by Zichao Yang et al., 2016
+Paper: https://www.cs.cmu.edu/~./hovy/papers/16HLT-hierarchical-attention-networks.pdf
+"""
+
 import numpy as np
 import torch
 import torch.nn.functional as F
@@ -13,6 +18,16 @@ use_cuda = torch.cuda.is_available()
 
 
 class HierAttnNet(nn.Module):
+    """
+    Hierarchical Attention Net as described in Hierarchical Attention Networks for
+    Document Classification
+    https://www.cs.cmu.edu/~./hovy/papers/16HLT-hierarchical-attention-networks.pdf
+
+    I have added Embedding Dropout, LockedDropout and WeightDrop as described
+    in: Regularizing and Optimizing LSTM Language Models
+    https://arxiv.org/pdf/1708.02182.pdf
+    """
+
     def __init__(
         self,
         vocab_size,
@@ -73,6 +88,10 @@ class HierAttnNet(nn.Module):
 
 
 class RNNAttn(nn.Module):
+    """
+    Standard RNN network for classification with the possibility of adding attention
+    """
+
     def __init__(
         self,
         vocab_size,
@@ -143,6 +162,16 @@ class RNNAttn(nn.Module):
 
 
 class WordAttnNet(nn.Module):
+    """
+    Word Attention Net as described in Hierarchical Attention Networks for
+    Document Classification
+    https://www.cs.cmu.edu/~./hovy/papers/16HLT-hierarchical-attention-networks.pdf
+
+    I have added Embedding Dropout, LockedDropout and WeightDrop as described
+    in: Regularizing and Optimizing LSTM Language Models
+    https://arxiv.org/pdf/1708.02182.pdf
+    """
+
     def __init__(
         self,
         vocab_size,
@@ -194,6 +223,15 @@ class WordAttnNet(nn.Module):
 
 
 class SentAttnNet(nn.Module):
+    """
+    Sentence Attention Net as described in Hierarchical Attention Networks for
+    Document Classification
+    https://www.cs.cmu.edu/~./hovy/papers/16HLT-hierarchical-attention-networks.pdf
+
+    I have added WeightDrop as described in: Regularizing and Optimizing LSTM Language Models
+    https://arxiv.org/pdf/1708.02182.pdf
+    """
+
     def __init__(
         self, word_hidden_dim=32, sent_hidden_dim=32, padding_idx=1, weight_drop=0.0,
     ):
@@ -216,6 +254,11 @@ class SentAttnNet(nn.Module):
 
 
 class Attention(nn.Module):
+    """
+    Generic dot product Attention Mechanism without context.
+
+    """
+
     def __init__(self, hidden_dim, seq_len):
         super(Attention, self).__init__()
 
@@ -233,6 +276,12 @@ class Attention(nn.Module):
 
 
 class AttentionWithContext(nn.Module):
+    """
+    Attention Mechanism with context as described in Hierarchical Attention
+    Networks for Document Classification:
+    https://www.cs.cmu.edu/~./hovy/papers/16HLT-hierarchical-attention-networks.pdf
+    """
+
     def __init__(self, hidden_dim):
         super(AttentionWithContext, self).__init__()
 

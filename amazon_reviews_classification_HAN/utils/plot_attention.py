@@ -6,7 +6,22 @@ import matplotlib
 
 
 def plot_word_attention(doc, doc_w, cmap="Greens"):
+    r"""
+    Helper function to color text with the aim of visualizing attention
 
+    Parameters:
+    ----------
+    doc: List
+        List of str containing the sentences per review
+    doc: np.ndarray
+        np array with floats (between 0, 1) that are the attention weights per word.
+        They have the same length as s.split() where s is each element in doc
+
+    Returns:
+    --------
+    colored_doc: str
+        str containing the html colored review
+    """
     cmap = matplotlib.cm.get_cmap(cmap)
     template = '<font face="monospace" \nsize="3"; span class="barcode"; style="color: black; background-color: {}">{}</span>'
     colored_doc = ""
@@ -21,7 +36,22 @@ def plot_word_attention(doc, doc_w, cmap="Greens"):
 
 
 def plot_sent_attention(doc, doc_w, cmap="Greens"):
+    r"""
+    Helper function to color text with the aim of visualizing attention
 
+    Parameters:
+    ----------
+    doc: List
+        List of str containing the sentences per review
+    doc: np.ndarray
+        np array with floats (between 0, 1) that are the attention weights per sentence.
+        They have the same length as doc.
+
+    Returns:
+    --------
+    colored_doc: str
+        str containing the html colored review
+    """
     cmap = matplotlib.cm.get_cmap(cmap)
     template = '<font face="monospace" \nsize="3"; span class="barcode"; style="color: black; background-color: {}">{}</span>'
     colored_doc = ""

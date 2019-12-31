@@ -1,3 +1,10 @@
+"""
+Code here is taken DIRECTLY from the awd-lstm-lm Salesforce repo:
+https://github.com/salesforce/awd-lstm-lm/tree/32fcb42562aeb5c7e6c9dec3f2a3baaaf68a5cb5
+
+Credit to the authors: Stephen Merity, Nitish Shirish Keskar and Richard Socher
+"""
+
 import torch
 import warnings
 
