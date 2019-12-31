@@ -27,25 +27,27 @@ Within each directory there should be a README file to help guiding you through 
 
 3. `amazon_reviews_classification_with_EDA`
 
-	Amazon Reviews classification using tf-idf and
-	[Easy Data Augmentation](https://github.com/jasonwei20/eda_nlp) along with `lightGBM`
-	and `hyperopt` for the final classification and hyper-parameter optimization.
-	Following the philosophy of the previous exercise, I placed some emphasis in
-	the text preprocessing, in particular in the use of certain tokenizers.
+	Amazon Reviews classification using tf-idf and *EDA: Easy Data Augmentation
+	Techniques for Boosting Performance on Text Classification Tasks* ([Jason Wei
+	and Kai Zou 2019](https://github.com/jasonwei20/eda_nlp)) along with
+	`lightGBM` and `hyperopt` for the final classification and hyper-parameter
+	optimization. Following the philosophy of the previous exercise, I placed
+	some emphasis in the text preprocessing, in particular in the use of certain
+	tokenizers.
 
 4. `amazon_reviews_textrank`
 
 	The simplest text summarization approach using the `Pagerank` algorithm via
 	the	[networkx](https://networkx.github.io/documentation/networkx-1.10/index.html)
 	package and comparing the results with the
-	[proper](https://github.com/summanlp/textrank) `Textrank` implementation.
+	proper`Textrank` implementation *Variations of the Similarity Function of TextRank for Automated Summarization* ([Federico Barrios et al., 2016](https://github.com/summanlp/textrank)).
 
 5. `rnn_character_tagging`
 
-	Tagging at character level using RNNs with the aim of differentiating for example, different coding languages or writing styles. The code here is based in a [post](http://nadbordrozd.github.io/blog/2017/06/03/python-or-scala/) by [Nadbor](https://www.linkedin.com/in/nadbor-drozd-12316063/)
+	Tagging at character level using RNNs with the aim of differentiating for example, different coding languages or writing styles. The code here is based in a [post](http://nadbordrozd.github.io/blog/2017/06/03/python-or-scala/) by [Nadbor](https://www.linkedin.com/in/nadbor-drozd-12316063/).
 
 5. `amazon_reviews_classification_HAN`
 
-	Amazon Reviews classification (score prediction) using Hierarchical Attention Networks ([Zichao Yang, et al., 2016](https://www.cs.cmu.edu/~./hovy/papers/16HLT-hierarchical-attention-networks.pdf)). I have also used a number of Dropout mechanisms from [the work](https://arxiv.org/pdf/1708.02182.pdf) of Stephen Merity, Nitish Shirish Keskar and Richard Socher: Regularizing and Optimizing LSTM Language Models.
+	Amazon Reviews classification (score prediction) using Hierarchical Attention Networks ([Zichao Yang, et al., 2016](https://www.cs.cmu.edu/~./hovy/papers/16HLT-hierarchical-attention-networks.pdf)). I have also used a number of Dropout mechanisms from the work *Regularizing and Optimizing LSTM Language Models* ([Stephen Merity, Nitish Shirish Keskar and Richard Socher, 2017](https://arxiv.org/pdf/1708.02182.pdf)).
 
 Any comments or suggestions please: jrzaurin@gmail.com or even better open an issue.
