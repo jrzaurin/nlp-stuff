@@ -4,7 +4,7 @@
 
 ## NLP stuff
 
-As I have time, I will add here stuff related to NLP.
+I add here stuff related to NLP.
 
 Within each directory there should be a README file to help guiding you through the code. So far, this is what I have included:
 
