@@ -13,7 +13,7 @@ def plot_word_attention(doc, doc_w, cmap="Greens"):
     ----------
     doc: List
         List of str containing the sentences per review
-    doc: np.ndarray
+    doc_w: np.ndarray
         np array with floats (between 0, 1) that are the attention weights per word.
         They have the same length as s.split() where s is each element in doc
 
@@ -25,13 +25,16 @@ def plot_word_attention(doc, doc_w, cmap="Greens"):
     cmap = matplotlib.cm.get_cmap(cmap)
     template = '<font face="monospace" \nsize="3"; span class="barcode"; style="color: black; background-color: {}">{}</span>'
     colored_doc = ""
-
     for sent, sent_w in zip(doc, doc_w):
+        sent_len, pad_count = len(sent.split()), 0
         for t, w in zip(sent.split(), sent_w):
+            if t == 'xxpad':
+                pad_count+=1
+                continue
             color = matplotlib.colors.rgb2hex(cmap(w)[:3])
             colored_doc += template.format(color, "&nbsp" + t + "&nbsp")
-        colored_doc += "</br>"
-
+        if pad_count != sent_len:
+            colored_doc += "</br>"
     return colored_doc
 
 
@@ -43,7 +46,7 @@ def plot_sent_attention(doc, doc_w, cmap="Greens"):
     ----------
     doc: List
         List of str containing the sentences per review
-    doc: np.ndarray
+    doc_w: np.ndarray
         np array with floats (between 0, 1) that are the attention weights per sentence.
         They have the same length as doc.
 
@@ -57,7 +60,8 @@ def plot_sent_attention(doc, doc_w, cmap="Greens"):
     colored_doc = ""
 
     for sent, sent_w in zip(doc, doc_w):
-        color = matplotlib.colors.rgb2hex(cmap(sent_w)[:3])
-        colored_doc += template.format(color, "&nbsp" + sent + "&nbsp") + "</br>"
-
+        sent = ' '.join([t for t in sent.split() if t!='xxpad'])
+        if len(sent) > 0:
+            color = matplotlib.colors.rgb2hex(cmap(sent_w)[:3])
+            colored_doc += template.format(color, "&nbsp" + sent + "&nbsp") + "</br>"
     return colored_doc
