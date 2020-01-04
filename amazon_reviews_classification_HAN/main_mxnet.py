@@ -14,6 +14,7 @@ from mxnet import gluon, autograd, nd
 from mxnet.metric import Accuracy
 
 from models.mxnet_models import HierAttnNet, RNNAttn
+from utils.preprocessors import build_embeddings_matrix
 from utils.parser import parse_args
 
 n_cpus = os.cpu_count()
@@ -197,6 +198,10 @@ if __name__ == "__main__":
     )
 
     tok = pickle.load(open(data_dir / tokf, "rb"))
+
+    if args.embedding_matrix is not None:
+        embedding_matrix = build_embeddings_matrix(tok.vocab, args.embedding_matrix, verbose=0)
+
     if args.model == "han":
         model = HierAttnNet(
             vocab_size=len(tok.vocab.stoi),
@@ -208,7 +213,7 @@ if __name__ == "__main__":
             weight_drop=args.weight_drop,
             embed_drop=args.embed_drop,
             locked_drop=args.locked_drop,
-            embedding_matrix=args.embedding_matrix,
+            embedding_matrix=embedding_matrix,
             last_drop=args.last_drop,
             num_class=args.num_class,
         )
@@ -223,7 +228,7 @@ if __name__ == "__main__":
             embed_drop=args.embed_drop,
             locked_drop=args.locked_drop,
             last_drop=args.last_drop,
-            embedding_matrix=args.embedding_matrix,
+            embedding_matrix=embedding_matrix,
             num_class=args.num_class,
             with_attention=args.with_attention,
         )

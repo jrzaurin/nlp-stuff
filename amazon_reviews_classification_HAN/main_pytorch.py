@@ -13,6 +13,7 @@ from torch.optim.lr_scheduler import CyclicLR, ReduceLROnPlateau
 from torch.utils.data import TensorDataset, DataLoader
 
 from models.pytorch_models import HierAttnNet, RNNAttn
+from utils.preprocessors import build_embeddings_matrix
 from utils.metrics import CategoricalAccuracy
 from utils.parser import parse_args
 
@@ -201,6 +202,10 @@ if __name__ == "__main__":
     )
 
     tok = pickle.load(open(data_dir / tokf, "rb"))
+
+    if args.embedding_matrix is not None:
+        embedding_matrix = build_embeddings_matrix(tok.vocab, args.embedding_matrix, verbose=0)
+
     if args.model == "han":
         model = HierAttnNet(
             vocab_size=len(tok.vocab.stoi),
@@ -214,7 +219,7 @@ if __name__ == "__main__":
             embed_drop=args.embed_drop,
             locked_drop=args.locked_drop,
             last_drop=args.last_drop,
-            embedding_matrix=args.embedding_matrix,
+            embedding_matrix=embedding_matrix,
             num_class=args.num_class,
         )
     elif args.model == "rnn":
@@ -229,7 +234,7 @@ if __name__ == "__main__":
             embed_drop=args.embed_drop,
             locked_drop=args.locked_drop,
             last_drop=args.last_drop,
-            embedding_matrix=args.embedding_matrix,
+            embedding_matrix=embedding_matrix,
             num_class=args.num_class,
             with_attention=args.with_attention,
         )

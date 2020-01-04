@@ -291,6 +291,58 @@ def pad_nested_sequences(
         return res
 
 
+def build_embeddings_matrix(vocab, word_vectors_path, verbose=1):
+    r"""
+    Build the embedding matrix using pretrained word vectors
+
+    Parameters
+    ----------
+    vocab: Fastai's Vocab object
+        see: https://docs.fast.ai/text.transform.html#Vocab
+    word_vectors_path:str
+        path to the pretrained word embeddings
+    verbose: Int. Default=1
+
+    Returns
+    -------
+    embedding_matrix: np.ndarray
+        pretrained word embeddings. If a word in our vocabulary is not among the
+        pretrained embeddings it will be assigned the mean pretrained
+        word-embeddings vector
+    """
+    if not os.path.isfile(word_vectors_path):
+        raise FileNotFoundError("{} not found".format(word_vectors_path))
+    if verbose: print('Indexing word vectors...')
+
+    embeddings_index = {}
+    f = open(word_vectors_path)
+    for line in f:
+        values = line.split()
+        word = values[0]
+        coefs = np.asarray(values[1:], dtype='float32')
+        embeddings_index[word] = coefs
+    f.close()
+
+    if verbose:
+        print('Loaded {} word vectors'.format(len(embeddings_index)))
+        print('Preparing embeddings matrix...')
+
+    mean_word_vector = np.mean(list(embeddings_index.values()), axis=0)
+    embedding_dim = len(list(embeddings_index.values())[0])
+    num_words = len(vocab.itos)
+    embedding_matrix = np.zeros((num_words, embedding_dim))
+    found_words=0
+    for i,word in enumerate(vocab.itos):
+        embedding_vector = embeddings_index.get(word)
+        if embedding_vector is not None:
+            embedding_matrix[i] = embedding_vector
+            found_words+=1
+        else:
+            embedding_matrix[i] = mean_word_vector
+
+    return embedding_matrix
+
+
 def test_idx_groups(nested_list, flat_list, idx_seq):
     r"""
     ***CAN BE IGNORED***
