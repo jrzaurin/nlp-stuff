@@ -1,3 +1,8 @@
+"""
+The code here is based on the original implementation, which you can find
+here: https://github.com/jasonwei20/eda_nlp/blob/master/code/eda.py
+"""
+
 import spacy
 import random
 import re
@@ -25,7 +30,6 @@ def synonym_replacement(words, n):
 			new_words = [synonym if word == random_word else word for word in new_words]
 			num_replaced += 1
 		if num_replaced >= n: break
-	#this is stupid but we need it, trust me
 	sentence = ' '.join(new_words)
 	new_words = sentence.split(' ')
 	return new_words
