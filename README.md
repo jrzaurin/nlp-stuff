@@ -29,7 +29,7 @@ Within each directory there should be a README file to help guiding you through 
 
 3. `amazon_reviews_classification_HAN`
 
-	Amazon Reviews classification (score prediction) using Hierarchical Attention Networks ([Zichao Yang, et al., 2016](https://www.cs.cmu.edu/~./hovy/papers/16HLT-hierarchical-attention-networks.pdf)). I have also used a number of Dropout mechanisms from the work *Regularizing and Optimizing LSTM Language Models* ([Stephen Merity, Nitish Shirish Keskar and Richard Socher, 2017](https://arxiv.org/pdf/1708.02182.pdf)).
+	Amazon Reviews classification (score prediction) using Hierarchical Attention Networks ([Zichao Yang, et al., 2016](https://www.cs.cmu.edu/~./hovy/papers/16HLT-hierarchical-attention-networks.pdf)). I have also used a number of Dropout mechanisms from the work *Regularizing and Optimizing LSTM Language Models* ([Stephen Merity, Nitish Shirish Keskar and Richard Socher, 2017](https://arxiv.org/pdf/1708.02182.pdf)). The companion Medium post can be found [here](https://towardsdatascience.com/predicting-amazon-reviews-scores-using-hierarchical-attention-networks-with-pytorch-and-apache-5214edb3df20).
 
 
 4. `amazon_reviews_textrank`

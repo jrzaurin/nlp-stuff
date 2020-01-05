@@ -3,7 +3,7 @@
 The code in this directory is my implementation, using `Pytorch` and `MxNet`,
 of the nice paper *Hierarchical Attention Networks for Document
 Classification* ([Zichao Yang et al.,
-2016](https://www.cs.cmu.edu/~./hovy/papers/16HLT-hierarchical-attention-networks.pdf))
+2016](https://www.cs.cmu.edu/~./hovy/papers/16HLT-hierarchical-attention-networks.pdf)).
 
 I have also used the results and code presented in *Regularizing and
 Optimizing LSTM Language Models* ([Stephen Merity, Nitish Shirish Keskar and
@@ -12,6 +12,8 @@ implementation of Embedding Dropout, Locked Dropout and Weight Dropout. The
 later is in itself based on the work of [Wan et al
 (2013)](http://yann.lecun.com/exdb/publis/pdf/wan-icml-13.pdf):
 *Regularization of neural networks using dropconnect*.
+
+The companion Medium post can be found [here](https://towardsdatascience.com/predicting-amazon-reviews-scores-using-hierarchical-attention-networks-with-pytorch-and-apache-5214edb3df20)
 
 
 ### 1. Prepare the data
