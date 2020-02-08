@@ -1,0 +1,18 @@
+#python
+__pycache__*
+*.pyc
+
+# jupyter / ipython
+.ipynb_checkpoints
+datasets/
+
+
+# sublime
+*.sublime-workspace
+sftp*-config.json
+
+# misc
+.DS_store
+
+# data dir
+data/
