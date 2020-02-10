@@ -15,8 +15,6 @@ from utils.preprocessing import (
 )
 from utils.text import Vocab
 
-import pdb
-
 
 if __name__ == "__main__":
 
@@ -36,8 +34,8 @@ if __name__ == "__main__":
     test_dir = data_dir / "test"
     valid_dir = data_dir / "valid"
 
-    logs_dir = Path("logs")
-    model_dir = Path("models")
+    logs_dir = data_dir/ "logs"
+    weights_dir = data_dir/ "weights"
 
     enforce = True
 
@@ -49,8 +47,8 @@ if __name__ == "__main__":
         os.makedirs(valid_dir)
     if not os.path.exists(logs_dir):
         os.makedirs(logs_dir)
-    if not os.path.exists(model_dir):
-        os.makedirs(model_dir)
+    if not os.path.exists(weights_dir):
+        os.makedirs(weights_dir)
 
     # c = context, q = question, a = answer
     if os.path.exists(data_dir / "word_counter.p") and not enforce:
@@ -67,20 +65,19 @@ if __name__ == "__main__":
         word_vocab = Vocab.create(word_counter, max_vocab=50000, min_freq=5)
     else:
         word_vocab, word_emb_mat = get_embeddings_v1(
-            word_counter, emb_file=word_vectors_path, max_vocab=90000, min_freq=1
+            word_counter, emb_file=word_vectors_path, max_vocab=len(word_counter), min_freq=-1
         )
         np.savez(data_dir / "word_emb_mat.npz", word_emb_mat=word_emb_mat)
-    pickle.dump(word_vocab, open(data_dir / "word_vocab.p", "wb"))
+    word_vocab.save(data_dir / "word_vocab.p")
 
     if char_vectors_path is None:
         char_vocab = Vocab.create(char_counter, max_vocab=200, min_freq=-1)
     else:
         char_vocab, char_emb_mat = get_embeddings_v1(
-            char_counter, emb_file=char_vectors_path, max_vocab=1000, min_freq=-1
+            char_counter, emb_file=char_vectors_path, max_vocab=len(char_counter), min_freq=-1
         )
         np.savez(data_dir / "char_emb_mat.npz", char_emb_mat=char_emb_mat)
-    pickle.dump(char_vocab, open(data_dir / "char_vocab.p", "wb"))
-
+    char_vocab.save(data_dir / "char_vocab.p")
     build_sequences(
         train_dir / "full_train_c_q.p",
         train_dir / "full_train_seq.npz",

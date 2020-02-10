@@ -1,10 +1,11 @@
 import numpy as np
+import pickle
 
 from collections import defaultdict, Counter
 
 
-UNK, PAD = "xxunk", "xxpad"
-text_spec_tok = [UNK, PAD]
+PAD, UNK  = "xxpad", "xxunk"
+text_spec_tok = [PAD, UNK]
 
 
 class Vocab:

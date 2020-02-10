@@ -1,5 +1,6 @@
 """
-The content of this file is mostly copied from https://github.com/HKUST-KnowComp/R-Net/blob/master/prepro.py
+The content of this file is an adaptation from
+https://github.com/HKUST-KnowComp/R-Net/blob/master/prepro.py
 """
 
 import os
@@ -10,16 +11,15 @@ import numpy as np
 
 from tqdm import tqdm
 from pathlib import Path
+from collections import Counter, defaultdict
+from sklearn.datasets.base import Bunch
 from sklearn.model_selection import train_test_split
 
 from .text import Vocab
 
 
-import pdb
-
-
 nlp = spacy.blank("en")
-
+PAD, UNK  = "xxpad", "xxunk"
 
 def word_tokenize(sent):
     doc = nlp(sent)
@@ -99,7 +99,6 @@ def process_file(filepath, word_counter, char_counter, data_type):
                         "uuid": qa["id"],
                     }
         print("{} questions in total".format(len(examples)))
-
     # c = context, q = question, a = answer
     if data_type == "train":
         pickle.dump(examples, open("data/train/full_train_c_q.p", "wb"))
@@ -140,7 +139,6 @@ def get_embeddings_v1(counter, max_vocab, min_freq, emb_file):
     )
     embedding_dim = len(list(embeddings_index.values())[0])
     vocab = Vocab.create(embeddings_index.keys())
-    UNK, PAD = "xxunk", "xxpad"
     embeddings_index[PAD] = [0.0 for _ in range(embedding_dim)]
     embeddings_index[UNK] = [0.0 for _ in range(embedding_dim)]
     embedding_matrix = np.array([embeddings_index[tok] for tok in vocab.itos])
@@ -186,6 +184,7 @@ def build_sequences(
     out_file,
     word_vocab,
     char_vocab,
+    only_pretrained=True,
     para_limit=400,
     ques_limit=50,
     ans_limit=30,
@@ -199,9 +198,12 @@ def build_sequences(
         )
 
     def _get_word(word):
-        for each in (word, word.lower(), word.capitalize(), word.upper()):
-            if each in word_vocab.stoi:
-                return word_vocab.stoi[each]
+        if only_pretrained:
+            for each in (word, word.lower(), word.capitalize(), word.upper()):
+                if each in word_vocab.stoi:
+                    return word_vocab.stoi[each]
+        elif word in word_vocab.stoi:
+                return word_vocab.stoi[word]
         return 0
 
     def _get_char(char):
@@ -227,10 +229,10 @@ def build_sequences(
             continue
         total += 1
 
-        context_word_seq = np.ones([para_limit], dtype=np.int32)
-        context_char_seq = np.ones([para_limit, char_limit], dtype=np.int32)
-        ques_word_seq = np.ones([ques_limit], dtype=np.int32)
-        ques_char_seq = np.ones([ques_limit, char_limit], dtype=np.int32)
+        context_word_seq = np.zeros([para_limit], dtype=np.int32)
+        context_char_seq = np.zeros([para_limit, char_limit], dtype=np.int32)
+        ques_word_seq = np.zeros([ques_limit], dtype=np.int32)
+        ques_char_seq = np.zeros([ques_limit, char_limit], dtype=np.int32)
 
         for i, token in enumerate(example["context_tokens"]):
 
