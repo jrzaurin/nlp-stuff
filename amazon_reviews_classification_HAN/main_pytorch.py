@@ -17,6 +17,7 @@ from utils.preprocessors import build_embeddings_matrix
 from utils.metrics import CategoricalAccuracy
 from utils.parser import parse_args
 
+import pdb
 
 n_cpus = os.cpu_count()
 use_cuda = torch.cuda.is_available()
@@ -183,7 +184,8 @@ if __name__ == "__main__":
     train_set = TensorDataset(
         torch.from_numpy(train_mtx["X_train"]), torch.from_numpy(train_mtx["y_train"]).long(),
     )
-    train_loader = DataLoader(dataset=train_set, batch_size=args.batch_size, num_workers=n_cpus)
+    train_loader = DataLoader(dataset=train_set, batch_size=args.batch_size, num_workers=n_cpus,
+        shuffle=True)
 
     valid_mtx = np.load(valid_dir / fvalid)
     eval_set = TensorDataset(
@@ -219,7 +221,7 @@ if __name__ == "__main__":
             embed_drop=args.embed_drop,
             locked_drop=args.locked_drop,
             last_drop=args.last_drop,
-            embedding_matrix=embedding_matrix,
+            embedding_matrix=args.embedding_matrix,
             num_class=args.num_class,
         )
     elif args.model == "rnn":
@@ -234,7 +236,7 @@ if __name__ == "__main__":
             embed_drop=args.embed_drop,
             locked_drop=args.locked_drop,
             last_drop=args.last_drop,
-            embedding_matrix=embedding_matrix,
+            embedding_matrix=args.embedding_matrix,
             num_class=args.num_class,
             with_attention=args.with_attention,
         )

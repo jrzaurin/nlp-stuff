@@ -182,19 +182,19 @@ if __name__ == "__main__":
     train_mtx = np.load(train_dir / ftrain)
     train_set = gluon.data.dataset.ArrayDataset(train_mtx["X_train"], train_mtx["y_train"])
     train_loader = gluon.data.DataLoader(
-        dataset=train_set, batch_size=args.batch_size, num_workers=n_cpus
+        dataset=train_set, batch_size=args.batch_size, num_workers=n_cpus, shuffle=True,
     )
 
     valid_mtx = np.load(valid_dir / fvalid)
     eval_set = gluon.data.dataset.ArrayDataset(valid_mtx["X_valid"], valid_mtx["y_valid"])
     eval_loader = gluon.data.DataLoader(
-        dataset=eval_set, batch_size=args.batch_size, num_workers=n_cpus
+        dataset=eval_set, batch_size=args.batch_size, num_workers=n_cpus, shuffle=False
     )
 
     test_mtx = np.load(test_dir / ftest)
     test_set = gluon.data.dataset.ArrayDataset(test_mtx["X_test"], test_mtx["y_test"])
     test_loader = gluon.data.DataLoader(
-        dataset=test_set, batch_size=args.batch_size, num_workers=n_cpus
+        dataset=test_set, batch_size=args.batch_size, num_workers=n_cpus, shuffle=False
     )
 
     tok = pickle.load(open(data_dir / tokf, "rb"))
@@ -213,7 +213,7 @@ if __name__ == "__main__":
             weight_drop=args.weight_drop,
             embed_drop=args.embed_drop,
             locked_drop=args.locked_drop,
-            embedding_matrix=embedding_matrix,
+            embedding_matrix=args.embedding_matrix,
             last_drop=args.last_drop,
             num_class=args.num_class,
         )
@@ -228,7 +228,7 @@ if __name__ == "__main__":
             embed_drop=args.embed_drop,
             locked_drop=args.locked_drop,
             last_drop=args.last_drop,
-            embedding_matrix=embedding_matrix,
+            embedding_matrix=args.embedding_matrix,
             num_class=args.num_class,
             with_attention=args.with_attention,
         )
