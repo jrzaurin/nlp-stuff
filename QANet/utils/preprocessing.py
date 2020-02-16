@@ -12,14 +12,15 @@ import numpy as np
 from tqdm import tqdm
 from pathlib import Path
 from collections import Counter, defaultdict
-from sklearn.datasets.base import Bunch
 from sklearn.model_selection import train_test_split
 
-from .text import Vocab
+from .text_utils import Vocab
 
+import pdb
 
 nlp = spacy.blank("en")
-PAD, UNK  = "xxpad", "xxunk"
+PAD, UNK = "xxpad", "xxunk"
+
 
 def word_tokenize(sent):
     doc = nlp(sent)
@@ -119,7 +120,7 @@ def process_file(filepath, word_counter, char_counter, data_type):
         pickle.dump(eval_examples, open("data/test/test_c_a.p", "wb"))
 
 
-def get_embeddings_v1(counter, max_vocab, min_freq, emb_file):
+def get_embeddings_v1(counter, max_vocab, min_freq, emb_file, vec_size=300):
 
     filtered_elements = [t for t, c in counter.most_common(max_vocab) if c >= min_freq]
     embeddings_index = {}
@@ -127,8 +128,8 @@ def get_embeddings_v1(counter, max_vocab, min_freq, emb_file):
     print("indexing embeddings.")
     for line in tqdm(f):
         values = line.split()
-        token = values[0]
-        coefs = np.asarray(values[1:], dtype="float32")
+        token = "".join(values[0:-vec_size])
+        coefs = np.asarray(values[-vec_size:], dtype="float32")
         if token in counter and counter[token] > min_freq:
             embeddings_index[token] = coefs
     f.close()
@@ -203,13 +204,13 @@ def build_sequences(
                 if each in word_vocab.stoi:
                     return word_vocab.stoi[each]
         elif word in word_vocab.stoi:
-                return word_vocab.stoi[word]
-        return 0
+            return word_vocab.stoi[word]
+        return 1
 
     def _get_char(char):
         if char in char_vocab.stoi:
             return char_vocab.stoi[char]
-        return 0
+        return 1
 
     examples = pickle.load(open(filepath, "rb"))
     context_word_seqs = []
@@ -229,10 +230,10 @@ def build_sequences(
             continue
         total += 1
 
-        context_word_seq = np.zeros([para_limit], dtype=np.int32)
-        context_char_seq = np.zeros([para_limit, char_limit], dtype=np.int32)
-        ques_word_seq = np.zeros([ques_limit], dtype=np.int32)
-        ques_char_seq = np.zeros([ques_limit, char_limit], dtype=np.int32)
+        context_word_seq = np.zeros([para_limit], dtype=np.int64)
+        context_char_seq = np.zeros([para_limit, char_limit], dtype=np.int64)
+        ques_word_seq = np.zeros([ques_limit], dtype=np.int64)
+        ques_char_seq = np.zeros([ques_limit, char_limit], dtype=np.int64)
 
         for i, token in enumerate(example["context_tokens"]):
 
@@ -266,13 +267,13 @@ def build_sequences(
 
     np.savez(
         out_file,
-        context_word_seqs=np.array(context_word_seqs),
-        context_char_seqs=np.array(context_char_seqs),
-        ques_word_seqs=np.array(ques_word_seqs),
-        ques_char_seqs=np.array(ques_char_seqs),
-        y1s=np.array(y1s),
-        y2s=np.array(y2s),
-        ids=np.array(ids),
+        context_word_seqs=np.array(context_word_seqs, dtype=np.int64),
+        context_char_seqs=np.array(context_char_seqs, dtype=np.int64),
+        ques_word_seqs=np.array(ques_word_seqs, dtype=np.int64),
+        ques_char_seqs=np.array(ques_char_seqs, dtype=np.int64),
+        y1s=np.array(y1s, dtype=np.int64),
+        y2s=np.array(y2s, dtype=np.int64),
+        ids=np.array(ids, dtype=np.int64),
     )
     # meta = {"total": total}
     # return meta

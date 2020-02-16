@@ -13,42 +13,27 @@ from utils.preprocessing import (
     get_embeddings_v2,
     build_sequences,
 )
-from utils.text import Vocab
-
+from utils.text_utils import Vocab
+from utils import config
 
 if __name__ == "__main__":
 
-    data_dir = Path("data")
-    squad_dir = data_dir / "squad"
-    # I will use dev as test and split train into train/dev
-    train_file = "train-v1.1.json"
-    test_file = "dev-v1.1.json"
+    data_dir = config.data_dir
 
-    embed_dir = data_dir / "glove"
+    # I will use dev as test and split train into train/dev
+    orig_train_fpath = config.orig_train_fpath
+    orig_test_fpath = config.orig_test_fpath
+
     # word_vectors_path = None
     # char_vectors_path = None
-    word_vectors_path = embed_dir / "glove.6B.300d.txt"
-    char_vectors_path = embed_dir / "glove.840B.300d-char.txt"
+    word_vectors_path = config.glove_wordv_fpath
+    char_vectors_path = config.glove_charv_fpath
 
-    train_dir = data_dir / "train"
-    test_dir = data_dir / "test"
-    valid_dir = data_dir / "valid"
+    train_dir = config.train_dir
+    test_dir = config.test_dir
+    valid_dir = config.valid_dir
 
-    logs_dir = data_dir/ "logs"
-    weights_dir = data_dir/ "weights"
-
-    enforce = True
-
-    if not os.path.exists(squad_dir):
-        os.makedirs(squad_dir)
-    if not os.path.exists(train_dir):
-        os.makedirs(train_dir)
-        os.makedirs(test_dir)
-        os.makedirs(valid_dir)
-    if not os.path.exists(logs_dir):
-        os.makedirs(logs_dir)
-    if not os.path.exists(weights_dir):
-        os.makedirs(weights_dir)
+    enforce = False
 
     # c = context, q = question, a = answer
     if os.path.exists(data_dir / "word_counter.p") and not enforce:
@@ -56,27 +41,33 @@ if __name__ == "__main__":
         char_counter = pickle.load(open(data_dir / "char_counter.p", "rb"))
     else:
         word_counter, char_counter = Counter(), Counter()
-        process_file(squad_dir / train_file, word_counter, char_counter, "train")
-        process_file(squad_dir / test_file, word_counter, char_counter, "test")
+        process_file(orig_train_fpath, word_counter, char_counter, "train")
+        process_file(orig_test_fpath, word_counter, char_counter, "test")
         pickle.dump(word_counter, open(data_dir / "word_counter.p", "wb"))
         pickle.dump(char_counter, open(data_dir / "char_counter.p", "wb"))
 
     if word_vectors_path is None:
         word_vocab = Vocab.create(word_counter, max_vocab=50000, min_freq=5)
     else:
-        word_vocab, word_emb_mat = get_embeddings_v1(
-            word_counter, emb_file=word_vectors_path, max_vocab=len(word_counter), min_freq=-1
+        word_vocab, word_emb_mtx = get_embeddings_v1(
+            word_counter,
+            emb_file=word_vectors_path,
+            max_vocab=len(word_counter),
+            min_freq=-1,
         )
-        np.savez(data_dir / "word_emb_mat.npz", word_emb_mat=word_emb_mat)
+        np.savez(data_dir / "word_emb_mtx.npz", word_emb_mtx=word_emb_mtx)
     word_vocab.save(data_dir / "word_vocab.p")
 
     if char_vectors_path is None:
         char_vocab = Vocab.create(char_counter, max_vocab=200, min_freq=-1)
     else:
-        char_vocab, char_emb_mat = get_embeddings_v1(
-            char_counter, emb_file=char_vectors_path, max_vocab=len(char_counter), min_freq=-1
+        char_vocab, char_emb_mtx = get_embeddings_v1(
+            char_counter,
+            emb_file=char_vectors_path,
+            max_vocab=len(char_counter),
+            min_freq=-1,
         )
-        np.savez(data_dir / "char_emb_mat.npz", char_emb_mat=char_emb_mat)
+        np.savez(data_dir / "char_emb_mtx.npz", char_emb_mtx=char_emb_mtx)
     char_vocab.save(data_dir / "char_vocab.p")
     build_sequences(
         train_dir / "full_train_c_q.p",
