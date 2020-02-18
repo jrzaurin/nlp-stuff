@@ -46,7 +46,13 @@ def parse_args():
 
     # model related parameters
     parser.add_argument(
-        "--freeze", action="store_true", help="freeze pretrained embeddings"
+        "--wd_pretrained", action="store_true", help="pretrained word embeddings",
+    )
+    parser.add_argument(
+        "--ch_pretrained", action="store_true", help="pretrained character embeddings",
+    )
+    parser.add_argument(
+        "--freeze", action="store_true", help="freeze pretrained word embeddings"
     )
     parser.add_argument(
         "--d_word", type=int, default=300, help="size of the word embeddings",
@@ -74,6 +80,17 @@ def parse_args():
     )
 
     # Training related parameters
+    parser.add_argument(
+        "--n_epochs",
+        type=int,
+        default=10,
+        help="number of epochs",
+    )
+    parser.add_argument(
+        "--full_train",
+        action="store_true",
+        help="Whether to use the full train dataset",
+    )
     parser.add_argument("--batch_size", type=int, default=64, help="Batch size.")
     parser.add_argument(
         "--lr", type=float, default=0.001, help="learning_rate",
@@ -81,11 +98,17 @@ def parse_args():
     parser.add_argument(
         "--grad_clip", type=float, default=10.0, help="Clips gradient at grad_clip",
     )
+    parser.add_argument(
+        "--optimizer",
+        type=str,
+        default="Adam",
+        help="optimizer to use. one of Adam/AdamW",
+    )
     parser.add_argument("--weight_decay", type=float, default=0.01, help="l2 reg.")
     parser.add_argument(
         "--beta1",
         type=float,
-        default=0.8,
+        default=0.9,
         help="beta1 in the Adam optimiser (or AdamW)",
     )
     parser.add_argument(

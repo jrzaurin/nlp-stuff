@@ -1,13 +1,13 @@
-# Order:
+#  Order:
 # After every training step
 # 1. __call__
 # Just before evaluation
 # 2. assign
-# Evaluate and then
+#  Evaluate and then
 # 3. resume
 
-class EMA():
 
+class EMA:
     def __init__(self, mu):
         self.mu = mu
         self.shadow = {}
@@ -28,12 +28,11 @@ class EMA():
         for name, param in model.named_parameters():
             if param.requires_grad:
                 assert name in self.shadow
-                new_average = \
-                    (1.0 - decay) * param.data + decay * self.shadow[name]
+                new_average = (1.0 - decay) * param.data + decay * self.shadow[name]
                 self.shadow[name] = new_average.clone()
 
     def assign(self, model):
-        # using assign will place the original params in a dic and assign them
+        #  using assign will place the original params in a dic and assign them
         # their current shadow values
         for name, param in model.named_parameters():
             if param.requires_grad:

@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import copy
 import math
+import pdb
 
 
 def clones(module, N):
@@ -15,11 +16,30 @@ def attention(query, key, value, mask=None, dropout=None):
     d_k = query.size(-1)
     scores = torch.matmul(query, key.transpose(-2, -1)) / math.sqrt(d_k)
     if mask is not None:
-        scores = scores.masked_fill_(mask == 0, -1e9)
+        scores = scores.masked_fill(mask == 0, -1e9)
     p_attn = F.softmax(scores, dim=-1)
     if dropout is not None:
         p_attn = dropout(p_attn)
     return torch.matmul(p_attn, value), p_attn
+
+
+class Projection1d(nn.Module):
+    def __init__(self, size_in, size_out, activation=None, bias=True):
+        super().__init__()
+
+        self.linear = nn.Linear(size_in, size_out, bias=bias)
+        self.activation = activation
+
+        if self.activation is not None:
+            nn.init.kaiming_normal_(self.linear.weight)
+        else:
+            nn.init.xavier_uniform_(self.linear.weight)
+
+    def forward(self, x):
+        if self.activation is not None:
+            return self.activation(self.linear(x))
+        else:
+            return self.linear(x)
 
 
 class DepthwiseSeparableConv(nn.Module):
@@ -99,12 +119,12 @@ class Embedding(nn.Module):
         d_model,
         dropout,
         dropout_char,
-        wlinear=True,
+        wproj=True,
         depthwise=True,
     ):
         super().__init__()
 
-        self.wlinear = wlinear
+        self.wproj = wproj
         self.depthwise = depthwise
         self.dropout_char = nn.Dropout(dropout_char)
         self.dropout_word = nn.Dropout(dropout)
@@ -119,8 +139,8 @@ class Embedding(nn.Module):
             )
             nn.init.kaiming_normal_(self.conv2d.weight)
 
-        if self.wlinear:
-            self.linear = nn.Linear(d_word + d_model, d_model)
+        if self.wproj:
+            self.proj = nn.Linear(d_word + d_model, d_model, bias=False)
             self.high = Highway(n_layers=2, size=d_model, dropout=dropout)
         else:
             self.high = Highway(n_layers=2, size=d_word + d_model, dropout=dropout)
@@ -136,8 +156,8 @@ class Embedding(nn.Module):
         wd_emb = wd_emb.transpose(1, 2)
 
         emb = torch.cat([ch_emb, wd_emb], dim=1).transpose(2, 1)
-        if self.wlinear:
-            emb = self.linear(emb)
+        if self.wproj:
+            emb = self.proj(emb)
         emb = self.high(emb)
         return emb
 
@@ -307,8 +327,8 @@ class CQAttention(nn.Module):
             S = self._optimized_trilinear(C, Q)
         else:
             S = self._trilinear(C, Q)
-        S1 = F.softmax(S.masked_fill_(Qmask == 0, -1e9), dim=2)
-        S2 = F.softmax(S.masked_fill_(Cmask == 0, -1e9), dim=1)
+        S1 = F.softmax(S.masked_fill(Qmask == 0, -1e9), dim=2)
+        S2 = F.softmax(S.masked_fill(Cmask == 0, -1e9), dim=1)
         A = torch.bmm(S1, Q)
         B = torch.bmm(torch.bmm(S1, S2.transpose(1, 2)), C)
         out = torch.cat([C, A, torch.mul(C, A), torch.mul(C, B)], dim=2)
@@ -342,14 +362,12 @@ class Pointer(nn.Module):
 
         self.w_1 = nn.Linear(d_model * 2, 1, bias=False)
         self.w_2 = nn.Linear(d_model * 2, 1, bias=False)
-        nn.init.uniform_(self.w_1.weight)
-        nn.init.uniform_(self.w_2.weight)
 
     def forward(self, M1, M2, M3, mask):
         X1 = torch.cat([M1, M2], dim=2)
         X2 = torch.cat([M1, M3], dim=2)
-        p1 = self.w_1(X1).squeeze(2).masked_fill_(mask == 0, -1e9)
-        p2 = self.w_2(X2).squeeze(2).masked_fill_(mask == 0, -1e9)
+        p1 = self.w_1(X1).squeeze(2).masked_fill(mask == 0, -1e9)
+        p2 = self.w_2(X2).squeeze(2).masked_fill(mask == 0, -1e9)
         return p1, p2
 
 
