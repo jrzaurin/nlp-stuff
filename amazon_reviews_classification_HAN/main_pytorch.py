@@ -282,7 +282,9 @@ if __name__ == "__main__":
             torch.save(model.state_dict(), model_weights / (model_name + ".pt"))
 
     if args.save_results:
-
+        # In reality I am skipping one step, which would be merging training
+        # and validation retrain AND THEN eval on test. I will do this at some
+        # point
         model.load_state_dict(torch.load(model_weights / (model_name + ".pt")))
         test_loss, preds = eval_step(model, test_loader, metric, is_valid=False)
         preds = (F.softmax(torch.cat(preds), 1).topk(1, 1)[1]).cpu().numpy().squeeze(1)
