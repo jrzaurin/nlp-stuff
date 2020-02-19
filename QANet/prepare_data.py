@@ -24,16 +24,16 @@ if __name__ == "__main__":
     orig_train_fpath = config.orig_train_fpath
     orig_test_fpath = config.orig_test_fpath
 
-    # word_vectors_path = None
-    # char_vectors_path = None
-    word_vectors_path = config.glove_wordv_fpath
+    # word_vectors_path = config.glove_wordv_fpath
+    word_vectors_path = config.fastt_wordv_fpath
     char_vectors_path = config.glove_charv_fpath
 
     train_dir = config.train_dir
     test_dir = config.test_dir
     valid_dir = config.valid_dir
 
-    enforce = False
+    # useful when I was experimenting
+    enforce = True
 
     # c = context, q = question, a = answer
     if os.path.exists(data_dir / "word_counter.p") and not enforce:
@@ -55,7 +55,7 @@ if __name__ == "__main__":
             max_vocab=len(word_counter),
             min_freq=-1,
         )
-        np.savez(data_dir / "word_emb_mtx.npz", word_emb_mtx=word_emb_mtx)
+        pickle.dump(word_emb_mtx, open(data_dir / "word_emb_mtx.p", "wb"))
     word_vocab.save(data_dir / "word_vocab.p")
 
     if char_vectors_path is None:
@@ -67,7 +67,7 @@ if __name__ == "__main__":
             max_vocab=len(char_counter),
             min_freq=-1,
         )
-        np.savez(data_dir / "char_emb_mtx.npz", char_emb_mtx=char_emb_mtx)
+        pickle.dump(char_emb_mtx, open(data_dir / "char_emb_mtx.p", "wb"))
     char_vocab.save(data_dir / "char_vocab.p")
     build_sequences(
         train_dir / "full_train_c_q.p",

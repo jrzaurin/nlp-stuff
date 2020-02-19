@@ -15,7 +15,7 @@ train_dir = data_dir / "train"
 test_dir = data_dir / "test"
 valid_dir = data_dir / "valid"
 weights_dir = data_dir / "weights"
-logs_dir = data_dir / "logs"
+log_dir = data_dir / "logs"
 glove_dir = data_dir / "glove"
 fasttext_dir = data_dir / "fasttext"
 
@@ -25,8 +25,8 @@ if not os.path.exists(train_dir):
     os.makedirs(valid_dir)
 if not os.path.exists(weights_dir):
     os.makedirs(weights_dir)
-if not os.path.exists(logs_dir):
-    os.makedirs(logs_dir)
+if not os.path.exists(log_dir):
+    os.makedirs(log_dir)
 if not os.path.exists(glove_dir):
     os.makedirs(glove_dir)
 if not os.path.exists(fasttext_dir):
@@ -34,7 +34,7 @@ if not os.path.exists(fasttext_dir):
 
 glove_wordv_fpath = glove_dir / "glove.6B.300d.txt"
 glove_charv_fpath = glove_dir / "glove.840B.300d-char.txt"
-fastt_wordv_fpath = None
+fastt_wordv_fpath = fasttext_dir / "cc.en.300.vec"
 
 para_limit = 400
 ques_limit = 50
@@ -43,6 +43,8 @@ char_limit = 16
 
 
 def parse_args():
+
+    parser = argparse.ArgumentParser()
 
     # model related parameters
     parser.add_argument(
@@ -81,10 +83,7 @@ def parse_args():
 
     # Training related parameters
     parser.add_argument(
-        "--n_epochs",
-        type=int,
-        default=10,
-        help="number of epochs",
+        "--n_epochs", type=int, default=10, help="number of epochs",
     )
     parser.add_argument(
         "--full_train",
@@ -104,11 +103,11 @@ def parse_args():
         default="Adam",
         help="optimizer to use. one of Adam/AdamW",
     )
-    parser.add_argument("--weight_decay", type=float, default=0.01, help="l2 reg.")
+    parser.add_argument("--weight_decay", type=float, default=0.0, help="l2 reg.")
     parser.add_argument(
         "--beta1",
         type=float,
-        default=0.9,
+        default=0.8,
         help="beta1 in the Adam optimiser (or AdamW)",
     )
     parser.add_argument(
@@ -122,6 +121,12 @@ def parse_args():
         type=float,
         default=0.9999,
         help="exponential moving average decay",
+    )
+    parser.add_argument(
+        "--lr_scheduler",
+        type=str,
+        default="LambdaLR",
+        help="lr_scheduler to use. one of LambdaLR/CyclicLR/ReduceLROnPlateau",
     )
     parser.add_argument(
         "--n_cycles", type=int, default=1, help="number of cycles when using cycliclr"
@@ -158,3 +163,18 @@ def parse_args():
         default=5,
         help="number or epochs before early stopping",
     )
+    parser.add_argument(
+        "--early_stop_criterium",
+        type=str,
+        default="loss",
+        help="criterium to stop training. One of loss/metric",
+    )
+
+    # save results
+    parser.add_argument(
+        "--save_results",
+        action="store_true",
+        help="whether to save results at the end of each epoch",
+    )
+
+    return parser.parse_args()
