@@ -2,7 +2,7 @@
   <img width="450" src="docs/figures/nlp_stuff_logo.png">
 </p>
 
-## NLP stuff
+# NLP stuff
 
 I add here stuff related to NLP.
 
