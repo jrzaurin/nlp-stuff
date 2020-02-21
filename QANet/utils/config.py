@@ -32,7 +32,7 @@ if not os.path.exists(glove_dir):
 if not os.path.exists(fasttext_dir):
     os.makedirs(fasttext_dir)
 
-glove_wordv_fpath = glove_dir / "glove.6B.300d.txt"
+glove_wordv_fpath = glove_dir / "glove.840B.300d.txt"
 glove_charv_fpath = glove_dir / "glove.840B.300d-char.txt"
 fastt_wordv_fpath = fasttext_dir / "cc.en.300.vec"
 
@@ -107,7 +107,7 @@ def parse_args():
     parser.add_argument(
         "--beta1",
         type=float,
-        default=0.8,
+        default=0.9,
         help="beta1 in the Adam optimiser (or AdamW)",
     )
     parser.add_argument(

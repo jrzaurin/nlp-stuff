@@ -15,7 +15,12 @@ from utils.config import parse_args
 from utils.evaluate_v1 import convert_tokens, evaluate
 from utils.text_utils import Vocab
 from utils.ema import EMA
-from models.pytorch_models import QANet
+
+# from models.pytorch_models import QANet
+
+from models.replica import QANet
+# from original_models import QANet
+import json
 
 import pdb
 
@@ -29,9 +34,17 @@ def get_metrics(eval_file, ids, y1_pred, y2_pred, answer_dict):
     p1 = F.softmax(y1_pred, dim=1)
     p2 = F.softmax(y2_pred, dim=1)
     outer = torch.matmul(p1.unsqueeze(2), p2.unsqueeze(1))
-    outer = torch.triu(outer) - torch.triu(outer, diagonal=config.ans_limit + 1)
-    ymin = torch.argmax(torch.max(outer, dim=2)[0], dim=1)
-    ymax = torch.argmax(torch.max(outer, dim=1)[0], dim=1)
+    for j in range(outer.size()[0]):
+        outer[j] = torch.triu(outer[j])
+        #outer[j] = torch.tril(outer[j], config.ans_limit)
+    a1, _ = torch.max(outer, dim=2)
+    a2, _ = torch.max(outer, dim=1)
+    ymin = torch.argmax(a1, dim=1)
+    ymax = torch.argmax(a2, dim=1)
+    # outer = torch.matmul(p1.unsqueeze(2), p2.unsqueeze(1))
+    # outer = torch.triu(outer) - torch.triu(outer, diagonal=config.ans_limit + 1)
+    # ymin = torch.argmax(torch.max(outer, dim=2)[0], dim=1)
+    # ymax = torch.argmax(torch.max(outer, dim=1)[0], dim=1)
     answer_dict_, _ = convert_tokens(
         eval_file, ids.tolist(), ymin.tolist(), ymax.tolist()
     )
@@ -67,13 +80,13 @@ class SQuADDataset(Dataset):
     def __init__(self, npz_file):
 
         data = np.load(npz_file)
-        self.context_word_seqs = data["context_word_seqs"][:9600]
-        self.context_char_seqs = data["context_char_seqs"][:9600]
-        self.ques_word_seqs = data["ques_word_seqs"][:9600]
-        self.ques_char_seqs = data["ques_char_seqs"][:9600]
-        self.y1s = data["y1s"][:9600]
-        self.y2s = data["y2s"][:9600]
-        self.ids = data["ids"][:9600]
+        self.context_word_seqs = data["context_word_seqs"][rand_sample]
+        self.context_char_seqs = data["context_char_seqs"][rand_sample]
+        self.ques_word_seqs = data["ques_word_seqs"][rand_sample]
+        self.ques_char_seqs = data["ques_char_seqs"][rand_sample]
+        self.y1s = data["y1s"][rand_sample]
+        self.y2s = data["y2s"][rand_sample]
+        self.ids = data["ids"][rand_sample]
 
     def __len__(self):
         return len(self.ids)
@@ -90,12 +103,12 @@ class SQuADDataset(Dataset):
         )
 
 
-def train_step(model, optimizer, train_loader, train_ctx_ans, epoch, scheduler=None):
+def train_step(model, optimizer, train_loader, train_ctx_ans, epoch, ema, scheduler=None):
 
     model.train()
     train_steps = len(train_loader)
     answer_dict = {}
-    running_loss = 0
+    running_loss, running_f1, running_em = 0, 0, 0
     with trange(train_steps) as t:
         for batch_idx, (Cwid, Ccid, Qwid, Qcid, y1, y2, ids) in zip(t, train_loader):
             t.set_description("epoch %i" % (epoch + 1))
@@ -113,33 +126,38 @@ def train_step(model, optimizer, train_loader, train_ctx_ans, epoch, scheduler=N
             y1_pred, y2_pred = model(Cwid, Ccid, Qwid, Qcid)
             loss1 = F.cross_entropy(y1_pred, y1)
             loss2 = F.cross_entropy(y2_pred, y2)
-            loss = (loss1 + loss2) / 2.0
+            loss = (loss1 + loss2)
             loss.backward()
             torch.nn.utils.clip_grad_value_(model.parameters(), args.grad_clip)
             optimizer.step()
+
             ema(model, n_iter)
 
             if isinstance(scheduler, CyclicLR) or isinstance(scheduler, LambdaLR):
                 scheduler.step()
 
-            print(optimizer.param_groups[0]["lr"])
+            # print(optimizer.param_groups[0]["lr"])
             running_loss += loss.item()
             avg_loss = running_loss / (batch_idx + 1)
 
             metrics = get_metrics(train_ctx_ans, ids, y1_pred, y2_pred, answer_dict)
+            running_em += metrics["exact_match"]
+            running_f1 += metrics["f1"]
+            avg_em = running_em / (batch_idx + 1)
+            avg_f1 = running_f1 / (batch_idx + 1)
 
             # writer.add_scalar('data/avg_loss', avg_loss, n_iter)
             # writer.add_scalar('data/EM', metrics["exact_match"], n_iter)
             # writer.add_scalar('data/f1', metrics["f1"], n_iter)
 
-            t.set_postfix(f1=metrics["f1"], EM=metrics["exact_match"], loss=avg_loss)
+            t.set_postfix(f1=avg_f1, EM=avg_em, loss=avg_loss)
 
 
 def eval_step(model, eval_loader, eval_ctx_ans, is_valid=True):
 
     model.eval()
     eval_steps = len(eval_loader)
-    running_loss = 0
+    running_loss, running_f1, running_em = 0, 0, 0
     answer_dict = {}
     with torch.no_grad():
         with trange(eval_steps) as t:
@@ -159,20 +177,22 @@ def eval_step(model, eval_loader, eval_ctx_ans, is_valid=True):
                 y1_pred, y2_pred = model(Cwid, Ccid, Qwid, Qcid)
                 loss1 = F.cross_entropy(y1_pred, y1)
                 loss2 = F.cross_entropy(y2_pred, y2)
-                loss = (loss1 + loss2) / 2.0
+                loss = (loss1 + loss2)
                 running_loss += loss.item()
                 avg_loss = running_loss / (batch_idx + 1)
 
                 metrics = get_metrics(eval_ctx_ans, ids, y1_pred, y2_pred, answer_dict)
+                running_em += metrics["exact_match"]
+                running_f1 += metrics["f1"]
+                avg_em = running_em / (batch_idx + 1)
+                avg_f1 = running_f1 / (batch_idx + 1)
 
                 # n_iter = batch_idx+(train_steps*epoch)
                 # writer.add_scalar('data/avg_loss', avg_loss, n_iter)
                 # writer.add_scalar('data/EM', metrics["exact_match"], n_iter)
                 # writer.add_scalar('data/f1', metrics["f1"], n_iter)
 
-                t.set_postfix(
-                    f1=metrics["f1"], EM=metrics["exact_match"], loss=avg_loss
-                )
+                t.set_postfix(f1=avg_f1, EM=avg_em, loss=avg_loss)
 
     return avg_loss, metrics["f1"], metrics["exact_match"]
 
@@ -196,11 +216,15 @@ if __name__ == "__main__":
             eval_ctx_ques, shuffle=False, batch_size=args.batch_size
         )
     else:
+        np.random.seed(1)
+        rand_sample = np.random.choice(np.arange(77375), 4800)
         train_ctx_ques = SQuADDataset(config.train_dir / "train_seq.npz")
         train_ctx_ans = pickle.load(open(config.train_dir / "train_c_a.p", "rb"))
         train_ctx_ques_loader = DataLoader(
-            train_ctx_ques, shuffle=True, batch_size=args.batch_size
+            train_ctx_ques, shuffle=False, batch_size=args.batch_size
         )
+        np.random.seed(2)
+        rand_sample = np.random.choice(np.arange(9978), 2400)
         eval_ctx_ques = SQuADDataset(config.valid_dir / "valid_seq.npz")
         eval_ctx_ans = pickle.load(open(config.valid_dir / "valid_c_a.p", "rb"))
         eval_ctx_ques_loader = DataLoader(
@@ -221,25 +245,30 @@ if __name__ == "__main__":
         char_vocab = Vocab.load(config.data_dir / "char_vocab.p")
         char_mat = None
 
+    with open("data/char_emb.pkl", "rb") as fh:
+        char_mat = np.array(json.load(fh), dtype=np.float32)
+
     # Model
-    model = QANet(
-        word_mat=word_mat,
-        char_mat=char_mat,
-        word_vocab=word_vocab,
-        char_vocab=char_vocab,
-        d_word=args.d_word,
-        d_char=args.d_char,
-        d_model=args.d_model,
-        dropout=args.dropout,
-        dropout_char=args.dropout_char,
-        para_limit=config.para_limit,
-        ques_limit=config.ques_limit,
-        n_heads=args.n_heads,
-        freeze=args.freeze,
-    )
+    # model = QANet(
+    #     word_mat=word_mat,
+    #     char_mat=char_mat,
+    #     word_vocab=word_vocab,
+    #     char_vocab=char_vocab,
+    #     d_word=args.d_word,
+    #     d_char=args.d_char,
+    #     d_model=args.d_model,
+    #     dropout=args.dropout,
+    #     dropout_char=args.dropout_char,
+    #     para_limit=config.para_limit,
+    #     ques_limit=config.ques_limit,
+    #     n_heads=args.n_heads,
+    #     freeze=args.freeze,
+    # )
+
+    model = QANet(word_mat, char_mat)
+
     model.to(device)
 
-    # Exponential moving average
     ema = EMA(args.ema_decay)
     ema.register(model)
 
@@ -297,7 +326,7 @@ if __name__ == "__main__":
     stop_step = 0
     for epoch in range(args.n_epochs):
         train_step(
-            model, optimizer, train_ctx_ques_loader, train_ctx_ans, epoch, scheduler
+            model, optimizer, train_ctx_ques_loader, train_ctx_ans, epoch, ema, scheduler
         )
         if epoch % args.eval_every == (args.eval_every - 1):
             ema.assign(model)

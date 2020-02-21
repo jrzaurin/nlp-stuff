@@ -23,23 +23,25 @@ def attention(query, key, value, mask=None, dropout=None):
     return torch.matmul(p_attn, value), p_attn
 
 
-class Projection1d(nn.Module):
-    def __init__(self, size_in, size_out, activation=None, bias=True):
+class Conv1D(nn.Module):
+    def __init__(self, nx, nf, wbias=True):
         super().__init__()
-
-        self.linear = nn.Linear(size_in, size_out, bias=bias)
-        self.activation = activation
-
-        if self.activation is not None:
-            nn.init.kaiming_normal_(self.linear.weight)
-        else:
-            nn.init.xavier_uniform_(self.linear.weight)
+        self.nf = nf
+        w = torch.empty(nx, nf)
+        nn.init.normal_(w, std=0.02)
+        self.weight = nn.Parameter(w)
+        self.wbias = wbias
+        if self.wbias:
+            self.bias = nn.Parameter(torch.zeros(nf))
 
     def forward(self, x):
-        if self.activation is not None:
-            return self.activation(self.linear(x))
+        size_out = x.size()[:-1] + (self.nf,)
+        if self.wbias:
+            x = torch.addmm(self.bias, x.view(-1, x.size(-1)), self.weight)
         else:
-            return self.linear(x)
+            x = torch.mm(x.view(-1, x.size(-1)), self.weight)
+        x = x.view(*size_out)
+        return x
 
 
 class DepthwiseSeparableConv(nn.Module):

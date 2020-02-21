@@ -33,7 +33,7 @@ if __name__ == "__main__":
     valid_dir = config.valid_dir
 
     # useful when I was experimenting
-    enforce = True
+    enforce = False
 
     # c = context, q = question, a = answer
     if os.path.exists(data_dir / "word_counter.p") and not enforce:
