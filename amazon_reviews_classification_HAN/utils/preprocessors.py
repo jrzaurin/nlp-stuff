@@ -3,7 +3,8 @@ import spacy
 import os
 
 from gensim.utils import tokenize
-from fastai.text import Tokenizer, Vocab
+# from fastai.text import Tokenizer, Vocab
+from pytorch_widedeep.utils import Tokenizer, Vocab
 from sklearn.exceptions import NotFittedError
 
 
