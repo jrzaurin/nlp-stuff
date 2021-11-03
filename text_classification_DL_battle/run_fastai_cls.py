@@ -7,6 +7,7 @@ from torch import nn
 
 
 import pandas as pd
+from fastai.callback.all import EarlyStoppingCallback
 from fastai.metrics import accuracy
 from fastai.text.all import text_classifier_learner
 from fastai.text.data import TextDataLoaders
@@ -117,9 +118,14 @@ if __name__ == "__main__":
     dl_cls = build_loader_for_classification(train_and_eval_df, force=True)
 
     learner = text_classifier_learner(
-        dl_cls, AWD_LSTM, path=RESULTS_DIR, drop_mult=0.5, metrics=accuracy
+        dl_cls,
+        AWD_LSTM,
+        path=RESULTS_DIR,
+        drop_mult=0.5,
+        metrics=accuracy,
+        cbs=EarlyStoppingCallback(patience=2),
     )
-    learner.fine_tune(epochs=1, base_lr=3e-3)
+    learner.fine_tune(epochs=8, base_lr=3e-3)
     learner.save("fastai_learner_cls")
 
     dl_test = learner.dls.test_dl(df_test.reviewText)

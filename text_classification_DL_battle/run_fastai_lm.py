@@ -6,6 +6,7 @@ import torch
 from torch import nn
 
 import pandas as pd
+from fastai.callback.all import EarlyStoppingCallback
 from fastai.metrics import accuracy, Perplexity
 from fastai.text.all import text_classifier_learner, language_model_learner
 from fastai.text.data import TextDataLoaders
@@ -73,14 +74,14 @@ def df_split(df):
         train_and_eval_df.to_csv(train_fname)
         df_test.to_csv(test_fname)
 
-    train_and_eval_df, df_test
+    return train_and_eval_df, df_test
 
 
-def build_loader_for_lm(train_df):
+def build_loader_for_lm(train_df, force=True):
 
     dl_fname = PROCESSED_DATA / "fastai_dl_lm.p"
 
-    if dl_fname.exists():
+    if dl_fname.exists() and not force:
         with open(dl_fname, "rb") as f:
             return pickle.open(f)
     else:
@@ -108,16 +109,16 @@ def build_lm(dl_lm):
     learner.unfreeze()
     learner.fit_one_cycle(10, 1e-3)
 
-    learner.save_encoder(RESULTS_DIR / "fastai_finetuned_encoder")
+    learner.save_encoder("fastai_finetuned_encoder")
 
     return dl_lm
 
 
-def build_loader_for_classification(train_df, dl_lm):
+def build_loader_for_classification(train_df, dl_lm, force=False):
 
     dl_cls_fname = PROCESSED_DATA / "fastai_dl_lm_cls.p"
 
-    if dl_cls_fname.exists():
+    if dl_cls_fname.exists() and not force:
         with open(dl_cls_fname, "rb") as f:
             return pickle.open(f)
     else:
@@ -139,7 +140,12 @@ def build_loader_for_classification(train_df, dl_lm):
 def train_learner(dl_cls):
 
     learner = text_classifier_learner(
-        dl_cls, AWD_LSTM, drop_mult=0.5, path=RESULTS_DIR, metrics=accuracy
+        dl_cls,
+        AWD_LSTM,
+        drop_mult=0.5,
+        path=RESULTS_DIR,
+        metrics=accuracy,
+        cbs=EarlyStoppingCallback(patience=2),
     )
     learner.load_encoder("fastai_finetuned_encoder")
 
@@ -152,7 +158,7 @@ def train_learner(dl_cls):
     learner.fit_one_cycle(1, slice(1e-3 / (2.6 ** 4), 1e-3))
 
     learner.unfreeze()
-    learner.fit_one_cycle(2, slice(2e-4 / (2.6 ** 4), 2e-3))
+    learner.fit_one_cycle(5, slice(2e-4 / (2.6 ** 4), 2e-4))
 
     learner.save("fastai_learner_lm_cls")
 
@@ -174,11 +180,11 @@ if __name__ == "__main__":
     train_and_eval_df, df_test = df_split(df)
     train_df = train_and_eval_df[~train_and_eval_df.is_valid]
 
-    dl_lm = build_loader_for_lm(train_df)
+    dl_lm = build_loader_for_lm(train_df, force=True)
 
     dl_lm = build_lm(dl_lm)
 
-    dl_cls = build_loader_for_classification(train_and_eval_df, dl_lm)
+    dl_cls = build_loader_for_classification(train_and_eval_df, dl_lm, force=True)
 
     learner = train_learner(dl_cls)
 
