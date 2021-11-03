@@ -12,7 +12,7 @@ from tqdm import trange
 from transformers import AdamW, get_linear_schedule_with_warmup
 
 from models.bert import BertClassifier
-from utils.bert_parser import parse_args
+from parsers.bert_parser import parse_args
 from utils.metrics import CategoricalAccuracy
 
 n_cpus = os.cpu_count()
@@ -40,7 +40,8 @@ def train_step(model, optimizer, train_loader, epoch, metric, scheduler=None):
             loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             optimizer.step()
-            scheduler.step()
+            if scheduler is not None:
+                scheduler.step()
 
             running_loss += loss.item()
             avg_loss = running_loss / (batch_idx + 1)
@@ -151,9 +152,9 @@ if __name__ == "__main__":  # noqa: C901
         train_dir=data_dir / "train",
         valid_dir=data_dir / "valid",
         test_dir=data_dir / "test",
-        ftrain="bert_train.npz",
-        fvalid="bert_valid.npz",
-        ftest="bert_test.npz",
+        ftrain="_".join([args.model_name, "train.npz"]),
+        fvalid="_".join([args.model_name, "valid.npz"]),
+        ftest="_".join([args.model_name, "test.npz"]),
         batch_size=args.batch_size,
     )
 
@@ -164,7 +165,6 @@ if __name__ == "__main__":  # noqa: C901
         head_dropout=args.head_dropout,
         num_class=args.num_class,
     )
-    # Tell PyTorch to run the model on GPU
     model.to(device)
 
     optimizer = AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
@@ -211,5 +211,5 @@ if __name__ == "__main__":  # noqa: C901
         )
         results_d["best_epoch"] = best_epoch
 
-        with open(args.log_dir / filename, "wb") as f:
+        with open(log_dir / filename, "wb") as f:
             pickle.dump(results_d, f)

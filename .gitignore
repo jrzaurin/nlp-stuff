@@ -13,3 +13,6 @@ sftp*-config.json
 
 # misc
 .DS_store
+
+# processed_data
+processed_data

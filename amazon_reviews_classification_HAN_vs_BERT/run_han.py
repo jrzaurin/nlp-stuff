@@ -12,7 +12,7 @@ from torch.utils.data import DataLoader, TensorDataset
 from tqdm import trange
 
 from models.han import HierAttnNet
-from utils.han_parser import parse_args
+from parsers.han_parser import parse_args
 from utils.metrics import CategoricalAccuracy
 from utils.preprocessing_utils import build_embeddings_matrix
 
@@ -133,7 +133,8 @@ if __name__ == "__main__":  # noqa: C901
 
     data_dir = Path(args.data_dir)
 
-    tok = pickle.load(open(data_dir / "HANPreprocessor.p", "rb"))
+    with open(data_dir / "HANTokenizer.p", "rb") as f:
+        tok = pickle.load(f)
 
     if args.save_results:
         suffix = str(datetime.now()).replace(" ", "_").split(".")[:-1][0]
@@ -236,5 +237,5 @@ if __name__ == "__main__":  # noqa: C901
         )
         results_d["best_epoch"] = best_epoch
 
-        with open(args.log_dir / filename, "wb") as f:
+        with open(log_dir / filename, "wb") as f:
             pickle.dump(results_d, f)

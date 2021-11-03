@@ -1,5 +1,5 @@
 from torch import nn
-from transformers import BertModel
+from transformers import BertModel, DistilBertModel
 
 
 from typing import List
@@ -17,7 +17,11 @@ class BertClassifier(nn.Module):
     ):
         super(BertClassifier, self).__init__()
 
-        self.bert = BertModel.from_pretrained(model_name)
+        self.bert = (
+            DistilBertModel.from_pretrained(model_name)
+            if "distil" in model_name
+            else BertModel.from_pretrained(model_name)
+        )
 
         classifier_dims = [768] + head_hidden_dim + [num_class]
         self.classifier = MLP(classifier_dims, head_dropout)
@@ -50,6 +54,7 @@ class MLP(nn.Module):
                     d_hidden[i - 1],
                     d_hidden[i],
                     dropout,
+                    activation=(i != len(d_hidden) - 1),
                 ),
             )
 
@@ -57,7 +62,9 @@ class MLP(nn.Module):
         return self.mlp(X)
 
     @staticmethod
-    def _dense_layer(inp: int, out: int, p: float):
+    def _dense_layer(inp: int, out: int, p: float, activation: bool):
         layers: List = [nn.Dropout(p)] if p > 0 else []
-        layers += [nn.Linear(inp, out), nn.ReLU(inplace=True)]
+        layers += [nn.Linear(inp, out)]
+        if activation:
+            layers += [nn.ReLU(inplace=True)]
         return nn.Sequential(*layers)

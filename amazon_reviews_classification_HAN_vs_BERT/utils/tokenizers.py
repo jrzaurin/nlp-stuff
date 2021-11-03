@@ -4,7 +4,6 @@ import os
 
 
 from pytorch_widedeep.utils import Vocab
-from sklearn.exceptions import NotFittedError
 from transformers import BertTokenizer
 from .preprocessing_utils import *  # noqa: F403
 
@@ -32,7 +31,7 @@ class BertFamilyTokenizer(object):
         self,
         pretrained_tokenizer="bert-base-uncased",
         do_lower_case=True,
-        max_length=128,
+        max_length=120,
     ):
         super(BertFamilyTokenizer, self).__init__()
         self.pretrained_tokenizer = pretrained_tokenizer
@@ -43,6 +42,8 @@ class BertFamilyTokenizer(object):
         self.tokenizer = BertTokenizer.from_pretrained(
             self.pretrained_tokenizer, do_lower_case=self.do_lower_case
         )
+
+        return self
 
     @staticmethod
     def _pre_rules(text):
@@ -66,7 +67,7 @@ class BertFamilyTokenizer(object):
         return np.stack(input_ids), np.stack(attention_masks)
 
     def fit_transform(self, texts):
-        self.fit(texts).transform(texts)
+        return self.fit(texts).transform(texts)
 
 
 class HANTokenizer(BaseTokenizer):
@@ -107,6 +108,9 @@ class HANTokenizer(BaseTokenizer):
         return texts_sents
 
     def fit(self, texts):
+        return self
+
+    def transform(self, texts):
         if self.verbose:
             print("Running sentence tokenizer for {} documents...".format(len(texts)))
         texts_sents = self._sentencizer(texts)
@@ -157,15 +161,5 @@ class HANTokenizer(BaseTokenizer):
         ]
         return np.stack(padded_texts, axis=0)
 
-    def transform(self, texts):
-        try:
-            self.vocab
-        except AttributeError:
-            raise NotFittedError(
-                "This HANTokenizer instance is not trained yet. "
-                "Call 'tokenize' with appropriate arguments before using this estimator."
-            )
-        return self.tokenize(texts)
-
     def fit_transform(self, texts):
-        self.fit(texts).transform(texts)
+        return self.fit(texts).transform(texts)

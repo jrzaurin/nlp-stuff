@@ -18,7 +18,7 @@ def parse_args():
         default="[256,64]",
         help="head hidden dimensions.",
     )
-    parser.add_argument("--head_dropout", type=float, default=0.1, help="head dropout.")
+    parser.add_argument("--head_dropout", type=float, default=0.2, help="head dropout.")
     parser.add_argument(
         "--model_name",
         type=str,
@@ -33,9 +33,9 @@ def parse_args():
     # Train/Test parameters
     parser.add_argument("--n_epochs", type=int, default=5, help="Number of epoch.")
     parser.add_argument("--weight_decay", type=float, default=0.0, help="l2 reg.")
-    parser.add_argument("--lr", type=float, default=0.001, help="Learning rate.")
+    parser.add_argument("--lr", type=float, default=0.0005, help="Learning rate.")
     parser.add_argument("--batch_size", type=int, default=64, help="Batch size.")
-    parser.add_argument("--lr_scheduler", action="store_true", help="use lr scheduler.")
+    parser.add_argument("--with_scheduler", action="store_true", help="use lr scheduler.")
 
     parser.add_argument(
         "--save_results", action="store_true", help="Save model and results"
