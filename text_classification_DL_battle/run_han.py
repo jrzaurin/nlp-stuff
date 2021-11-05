@@ -221,6 +221,12 @@ if __name__ == "__main__":  # noqa: C901
 
     if args.save_results:
 
+        # As I wrote in the dir text_classification_HAN, there is one step
+        # missing here. The one where you merge train and validation data,
+        # re-train and predict on the test data. I am aware of that and for
+        # the exercise here is "ok-ish", meaning, the metrics per technique
+        # might change but the overall results will remain the same
+
         results_d = {}
         results_d["args"] = args.__dict__
 

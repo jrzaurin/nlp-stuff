@@ -77,7 +77,7 @@ def df_split(df):
     return train_and_eval_df, df_test
 
 
-def build_loader_for_lm(train_df, force=True):
+def build_loader_for_lm(train_df, force=False):
 
     dl_fname = PROCESSED_DATA / "fastai_dl_lm.p"
 
@@ -101,13 +101,18 @@ def build_loader_for_lm(train_df, force=True):
 def build_lm(dl_lm):
 
     learner = language_model_learner(
-        dl_lm, AWD_LSTM, metrics=[accuracy, Perplexity()], path=RESULTS_DIR, wd=0.1
+        dl_lm,
+        AWD_LSTM,
+        metrics=[accuracy, Perplexity()],
+        path=RESULTS_DIR,
+        wd=0.1,
+        cbs=EarlyStoppingCallback(patience=2),
     ).to_fp16()
 
     learner.fit_one_cycle(1, 5e-3)
 
     learner.unfreeze()
-    learner.fit_one_cycle(10, 1e-3)
+    learner.fit_one_cycle(8, 1e-3)
 
     learner.save_encoder("fastai_finetuned_encoder")
 
@@ -158,7 +163,7 @@ def train_learner(dl_cls):
     learner.fit_one_cycle(1, slice(1e-3 / (2.6 ** 4), 1e-3))
 
     learner.unfreeze()
-    learner.fit_one_cycle(5, slice(2e-4 / (2.6 ** 4), 2e-4))
+    learner.fit_one_cycle(2, slice(2e-4 / (2.6 ** 4), 2e-4))
 
     learner.save("fastai_learner_lm_cls")
 
